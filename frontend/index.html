@@ -41,6 +41,23 @@
     /* score bars */
     .bar-track { background:rgba(0,0,0,.10); border:3px solid var(--ink); height:30px; overflow:hidden; }
     .bar-fill { height:100%; width:0; transition:width 1s cubic-bezier(.2,.9,.2,1); }
+    /* decorative theme backgrounds (behind content, html2canvas-safe shapes) */
+    .deco { position:absolute; inset:0; pointer-events:none; overflow:hidden; color:rgba(0,0,0,.07); z-index:0; }
+    .deco.inkw { color:rgba(255,255,255,.12); }
+    .deco::before, .deco::after { content:""; position:absolute; }
+    .deco-0::before { width:340px; height:340px; border:26px solid currentColor; border-radius:50%; top:-120px; right:-120px; }
+    .deco-0::after { width:180px; height:180px; border:18px solid currentColor; border-radius:50%; bottom:-60px; left:-60px; }
+    .deco-1::before { inset:0; background:repeating-linear-gradient(-45deg, currentColor 0 3px, transparent 3px 28px); }
+    .deco-2::before { inset:0; background:radial-gradient(currentColor 2.5px, transparent 3px); background-size:28px 28px; }
+    .deco-3::before { width:260px; height:260px; border:20px solid currentColor; transform:rotate(12deg); top:-90px; left:-90px; }
+    .deco-3::after { width:150px; height:150px; border:14px solid currentColor; transform:rotate(-18deg); bottom:-50px; right:-40px; }
+    .deco-4::before { inset:0; background:repeating-linear-gradient(0deg, currentColor 0 3px, transparent 3px 32px); }
+    .deco-5::before { width:240px; height:34px; background:currentColor; top:64px; right:-70px; transform:rotate(-8deg); }
+    .deco-5::after { width:240px; height:34px; background:currentColor; bottom:84px; left:-80px; transform:rotate(6deg); }
+    .deco-6::before { width:300px; height:300px; border:22px solid currentColor; border-radius:50%; top:-110px; left:-110px; }
+    .deco-6::after { width:160px; height:160px; border:14px solid currentColor; border-radius:50%; bottom:-50px; right:-50px; }
+    .deco-7::before { inset:0; background:repeating-linear-gradient(90deg, currentColor 0 22px, transparent 22px 64px); opacity:.35; }
+    .deco-8::before { inset:0; background:repeating-linear-gradient(45deg, currentColor 0 3px, transparent 3px 36px); }
     /* marquee */
     .marquee { overflow:hidden; white-space:nowrap; border-top:3px solid var(--ink); border-bottom:3px solid var(--ink); }
     .marquee > span { display:inline-block; animation:scroll 14s linear infinite; font-weight:900; text-transform:uppercase; letter-spacing:.1em; }
@@ -88,17 +105,20 @@
       <div class="min-h-screen flex flex-col items-center justify-center px-4 py-8 gap-5">
 
         <div id="card" class="frame w-full max-w-[560px] relative overflow-hidden"
-             :style="`background:${themes[slide].bg};color:${themes[slide].ink}`"
+             :style="`background:${themes[slide].bg};color:${themes[slide].ink};transition:background .45s ease`"
              @touchstart="touchStart($event)" @touchend="touchEnd($event)">
 
+          <!-- decorative theme background -->
+          <div class="deco" :class="['deco-'+slide, themes[slide].ink==='#ffffff' ? 'inkw' : '']"></div>
+
           <!-- progress ticks -->
-          <div class="flex gap-1.5 px-6 pt-6">
+          <div class="relative z-[1] flex gap-1.5 px-6 pt-6">
             <template x-for="n in totalSlides" :key="n">
               <div class="h-2 flex-1 border-2 border-[var(--ink)] cursor-pointer" :style="`background:${(n-1)<=slide ? 'var(--ink)':'transparent'}`" @click="go(n-1)"></div>
             </template>
           </div>
 
-          <div class="px-8 pb-10 pt-6 min-h-[560px] flex flex-col justify-center">
+          <div class="relative z-[1] px-8 pb-10 pt-6 min-h-[560px] flex flex-col justify-center">
 
             <!-- 0: COVER -->
             <div x-show="slide===0" class="reveal" :class="slide===0&&'run'">
@@ -136,21 +156,45 @@
               </div>
             </div>
 
-            <!-- 3: SCORES -->
+            <!-- 3: PORTFOLIO -->
             <div x-show="slide===3" class="reveal" :class="slide===3&&'run'">
+              <div class="badge pop text-xs mb-5">The Bag</div>
+              <div class="pop mb-5">
+                <p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60">Est. Net Worth</p>
+                <p class="display" style="font-size:clamp(2.6rem,11vw,4rem)">$<span x-text="data.metrics.netWorthUsd || '0.00'"></span></p>
+              </div>
+              <div class="flex flex-col gap-2 mb-4">
+                <template x-for="(h,i) in bag" :key="h.symbol + i">
+                  <div class="card pop px-4 py-3 flex items-center justify-between" :class="i%2 ? 'rotate-[0.6deg]' : '-rotate-[0.6deg]'">
+                    <span class="display text-lg" x-text="h.symbol"></span>
+                    <span class="mono text-xs opacity-70" x-text="h.amount"></span>
+                    <span class="display text-lg" :style="`color:${['#2B4BFF','#FF2D8B','#00A676','#8B3DFF','#C68A00'][i%5]}`" x-text="'$'+h.valueUsd"></span>
+                  </div>
+                </template>
+                <div x-show="!bag.length" class="card pop px-4 py-3 mono text-sm">No ERC-20 holdings found — pure native energy.</div>
+              </div>
+              <div class="pop grid grid-cols-3 gap-2">
+                <div class="card p-2 text-center"><p class="display text-lg" x-text="pf.tokenCount ?? 0"></p><p class="mono text-[9px] uppercase font-bold opacity-60 mt-0.5">Tokens</p></div>
+                <div class="card p-2 text-center"><p class="display text-lg" x-text="pf.nftCount ?? 0"></p><p class="mono text-[9px] uppercase font-bold opacity-60 mt-0.5">NFTs</p></div>
+                <div class="card p-2 text-center"><p class="display text-lg" x-text="'$'+(pf.stablecoinValueUsd ?? 0)"></p><p class="mono text-[9px] uppercase font-bold opacity-60 mt-0.5">Stables</p></div>
+              </div>
+            </div>
+
+            <!-- 4: SCORES -->
+            <div x-show="slide===4" class="reveal" :class="slide===4&&'run'">
               <div class="badge pop text-xs mb-6">Scorecard</div>
               <div class="flex flex-col gap-4">
                 <template x-for="s in scoreData" :key="s.label">
                   <div class="pop">
                     <div class="flex justify-between items-end mb-1"><span class="mono text-sm font-bold uppercase" x-text="s.label"></span><span class="display text-2xl" x-text="s.value"></span></div>
-                    <div class="bar-track"><div class="bar-fill" :style="`width:${slide===3 ? s.value : 0}%;background:${s.hex}`"></div></div>
+                    <div class="bar-track"><div class="bar-fill" :style="`width:${slide===4 ? s.value : 0}%;background:${s.hex}`"></div></div>
                   </div>
                 </template>
               </div>
             </div>
 
-            <!-- 4: FUN FACTS -->
-            <div x-show="slide===4" class="reveal" :class="slide===4&&'run'">
+            <!-- 5: FUN FACTS -->
+            <div x-show="slide===5" class="reveal" :class="slide===5&&'run'">
               <div class="badge pop text-xs mb-6">Fun Facts</div>
               <div class="flex flex-col gap-3">
                 <template x-for="(fact,i) in data.personality.funFacts" :key="i">
@@ -162,18 +206,20 @@
               </div>
             </div>
 
-            <!-- 5: HABITS -->
-            <div x-show="slide===5" class="reveal" :class="slide===5&&'run'">
+            <!-- 6: HABITS -->
+            <div x-show="slide===6" class="reveal" :class="slide===6&&'run'">
               <div class="badge pop text-xs mb-6">Trading Habits</div>
               <div class="grid grid-cols-2 gap-3 mb-3">
-                <div class="card pop p-5"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Peak Hour</p><p class="display" style="font-size:clamp(1.6rem,6vw,2.2rem);color:#2B4BFF" x-text="peakHourLabel"></p></div>
-                <div class="card pop p-5"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Streak</p><p class="display" style="font-size:clamp(1.6rem,6vw,2.2rem);color:#00A676"><span x-text="data.metrics.activityStreak"></span><span class="text-base"> days</span></p></div>
+                <div class="card pop p-4"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Peak Hour</p><p class="display" style="font-size:clamp(1.5rem,5.5vw,2rem);color:#2B4BFF" x-text="peakHourLabel"></p></div>
+                <div class="card pop p-4"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Streak</p><p class="display" style="font-size:clamp(1.5rem,5.5vw,2rem);color:#00A676"><span x-text="data.metrics.activityStreak"></span><span class="text-base"> days</span></p></div>
+                <div class="card pop p-4"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Cross-chain</p><p class="display" style="font-size:clamp(1.5rem,5.5vw,2rem);color:#FF2D8B"><span x-text="data.metrics.crossChain?.total ?? 0"></span><span class="text-base"> hops</span></p></div>
+                <div class="card pop p-4"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Contract Calls</p><p class="display" style="font-size:clamp(1.5rem,5.5vw,2rem);color:#C68A00" x-text="data.metrics.internalTxCount ?? 0"></p></div>
               </div>
               <div class="card pop p-4"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Top Frenemy</p><p class="display text-lg" x-text="data.metrics.topFrenemyLabel"></p><p class="mono text-xs break-all opacity-60 mt-1" x-text="data.metrics.topFrenemy"></p></div>
             </div>
 
-            <!-- 6: VERDICT -->
-            <div x-show="slide===6" class="reveal" :class="slide===6&&'run'">
+            <!-- 7: VERDICT -->
+            <div x-show="slide===7" class="reveal" :class="slide===7&&'run'">
               <div class="flex flex-col items-center text-center gap-6">
                 <p class="pop display" style="font-size:4rem">⚡</p>
                 <div class="card pop p-6 text-2xl font-black italic leading-snug" x-text="'&ldquo;'+data.personality.verdict+'&rdquo;'"></div>
@@ -181,13 +227,18 @@
               </div>
             </div>
 
-            <!-- 7: SUMMARY -->
-            <div x-show="slide===7" class="reveal" :class="slide===7&&'run'">
+            <!-- 8: SUMMARY -->
+            <div x-show="slide===8" class="reveal" :class="slide===8&&'run'">
               <div class="badge pop text-xs mb-5">In Summary</div>
-              <p class="display pop mb-5" style="font-size:clamp(1.5rem,6vw,2.2rem)" x-text="data.metrics.sarcasticTitle"></p>
-              <div class="grid grid-cols-4 gap-2 mb-6">
+              <p class="display pop mb-4" style="font-size:clamp(1.5rem,6vw,2.2rem)" x-text="data.metrics.sarcasticTitle"></p>
+              <div class="grid grid-cols-4 gap-2 mb-4">
                 <template x-for="s in scoreData" :key="s.label">
                   <div class="card pop p-2 text-center"><p class="mono text-[9px] uppercase font-bold opacity-60" x-text="s.label"></p><p class="display text-xl" :style="`color:${s.hex}`" x-text="s.value"></p></div>
+                </template>
+              </div>
+              <div class="pop flex flex-wrap gap-1.5 mb-6">
+                <template x-for="sig in signalChips" :key="sig">
+                  <span class="mono text-[10px] uppercase font-bold border-2 border-[#0a0a0a] bg-white text-[#0a0a0a] px-2 py-1" x-text="sig"></span>
                 </template>
               </div>
               <button @click="shareX()" class="pop btn w-full py-4 bg-[var(--ink)] text-white text-sm">Share on X</button>
@@ -223,7 +274,7 @@
         loading: false,
         wrapped: false,
         slide: 0,
-        totalSlides: 8,
+        totalSlides: 9,
         year: new Date().getFullYear(),
         data: { address:'', metrics: null, personality: null },
         disp: { totalTx: 0, swaps: 0 },
@@ -232,10 +283,11 @@
           { bg:'#FFD400', ink:'#0a0a0a' }, // cover
           { bg:'#FF2D8B', ink:'#0a0a0a' }, // archetype
           { bg:'#2B4BFF', ink:'#ffffff' }, // overview
+          { bg:'#12E4B6', ink:'#0a0a0a' }, // portfolio
           { bg:'#C6FF00', ink:'#0a0a0a' }, // scores
           { bg:'#FF5C00', ink:'#0a0a0a' }, // fun facts
           { bg:'#8B3DFF', ink:'#ffffff' }, // habits
-          { bg:'#12E4B6', ink:'#0a0a0a' }, // verdict
+          { bg:'#F3EDE2', ink:'#0a0a0a' }, // verdict
           { bg:'#FFD400', ink:'#0a0a0a' }, // summary
         ],
 
@@ -262,6 +314,17 @@
             { label: 'Degen', value: m.degenScore, hex: '#FF2D8B' },
             { label: 'Whale', value: m.whaleometer, hex: '#C68A00' },
           ];
+        },
+
+        get pf() { return this.data.metrics?.portfolio || {}; },
+        get bag() { return (this.pf.topHoldings || []).slice(0, 5); },
+
+        get signalChips() {
+          const s = this.data.metrics?.signals;
+          if (!s) return [];
+          return Object.entries(s).filter(([, v]) => v).map(([k]) =>
+            k.replace(/([A-Z])/g, ' $1').trim()
+          );
         },
 
         get activity() {
@@ -346,9 +409,23 @@
               totalTx: 847, tokenSymbol: 'OKB', balanceEth: '12.4821', balanceUsd: '624.10',
               gasBurnedEth: '3.2140', gasBurnedUsd: '160.70', swapCount: 213, defiScore: 78,
               activityBreakdown: { swap: 213, approve: 47, transfer: 89, native: 61, other: 90 },
+              portfolio: {
+                tokenCount: 7, totalValueUsd: 1841.22, stablecoinValueUsd: 614.43, nftCount: 4,
+                topHoldings: [
+                  { symbol: 'USDT', amount: '614.05', valueUsd: 614.43 },
+                  { symbol: 'WOKB', amount: '9.2', valueUsd: 460.00 },
+                  { symbol: 'XDOG', amount: '128400', valueUsd: 385.20 },
+                  { symbol: 'USDC', amount: '210.11', valueUsd: 210.15 },
+                  { symbol: 'PT', amount: '1520', valueUsd: 171.44 },
+                ],
+              },
+              tokenActivity: { transferCount: 96, uniqueTokens: 11, inbound: 41, outbound: 55, topToken: 'USDT' },
+              internalTxCount: 132, crossChain: { total: 9, deposits: 5, withdrawals: 4 },
+              netWorthUsd: '2465.32',
               airdropScore: 82, degenScore: 91, diamondHandsDays: 14, whaleometer: 67,
               uniqueProtocols: 19, topFrenemy: '0x8f3a9c2b1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f80',
               topFrenemyLabel: '0x8f3a…7f80', rarity: 'S-Tier',
+              signals: { nightOwl: true, likelyBot: false, approvalHeavy: true, highSwapActivity: true, diversifiedPortfolio: true, crossChainUser: true, nftCollector: true },
               peakHour: 2, activityStreak: 23, archetype: 'The 2AM Degen',
               sarcasticTitle: 'Serial Approver',
             },

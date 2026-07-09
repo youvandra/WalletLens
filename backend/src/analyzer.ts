@@ -5,9 +5,15 @@ import type {
   ActivityBreakdown,
   WalletSignals,
   AnalysisEvidence,
+  TokenHolding,
+  TokenTransfer,
+  PortfolioSummary,
+  TokenActivitySummary,
 } from "./types.js";
-import type { AddressProfile } from "./fetcher.js";
+import type { AddressProfile, FullWalletData } from "./fetcher.js";
 import { classifyMethod, labelAddress } from "./labels.js";
+
+const STABLECOINS = new Set(["USDT", "USDC", "DAI", "FDUSD", "TUSD", "USDE", "BUSD"]);
 
 // X Layer's native gas token is OKB. The X Layer Data API returns balance,
 // amount, and txFee as human-readable decimal strings (already in token
@@ -237,6 +243,52 @@ function generateSarcasticTitle(
   return "Crypto Enthusiast";
 }
 
+function summarizePortfolio(holdings: TokenHolding[], nftCount: number): PortfolioSummary {
+  const sorted = [...holdings].sort((a, b) => b.valueUsd - a.valueUsd);
+  const totalValueUsd = holdings.reduce((s, h) => s + h.valueUsd, 0);
+  const stablecoinValueUsd = holdings
+    .filter((h) => STABLECOINS.has(h.symbol.toUpperCase()))
+    .reduce((s, h) => s + h.valueUsd, 0);
+  return {
+    tokenCount: holdings.length,
+    totalValueUsd: Math.round(totalValueUsd * 100) / 100,
+    stablecoinValueUsd: Math.round(stablecoinValueUsd * 100) / 100,
+    topHoldings: sorted.slice(0, 5).map((h) => ({
+      symbol: h.symbol,
+      amount: h.amount,
+      valueUsd: Math.round(h.valueUsd * 100) / 100,
+    })),
+    nftCount,
+  };
+}
+
+function summarizeTokenActivity(transfers: TokenTransfer[], address: string): TokenActivitySummary {
+  const addr = address.toLowerCase();
+  const tokenCounts = new Map<string, number>();
+  let inbound = 0;
+  let outbound = 0;
+  for (const t of transfers) {
+    if (t.to?.toLowerCase() === addr) inbound++;
+    if (t.from?.toLowerCase() === addr) outbound++;
+    if (t.symbol) tokenCounts.set(t.symbol, (tokenCounts.get(t.symbol) || 0) + 1);
+  }
+  let topToken = "";
+  let topCount = 0;
+  for (const [sym, c] of tokenCounts) {
+    if (c > topCount) {
+      topToken = sym;
+      topCount = c;
+    }
+  }
+  return {
+    transferCount: transfers.length,
+    uniqueTokens: tokenCounts.size,
+    inbound,
+    outbound,
+    topToken,
+  };
+}
+
 // Rarity tier derived from the wallet's own standout score. This is an honest
 // self-referential rank ("your strongest dimension is X"), not a claim about a
 // percentile of the whole X Layer population (which we do not have data for).
@@ -248,10 +300,9 @@ function rarityTier(peakScore: number): string {
   return "D-Tier";
 }
 
-export async function analyzeWallet(
-  profile: AddressProfile,
-  transactions: OkLinkTransaction[]
-): Promise<WalletMetrics> {
+export async function analyzeWallet(data: FullWalletData): Promise<WalletMetrics> {
+  const { profile, transactions, holdings, tokenTransfers, nftCount, internalTxCount, crossChain } =
+    data;
   const address = profile.address;
   const balanceEth = Number(profile.balance || "0");
   const balanceUsd = balanceEth * TOKEN_USD_PRICE;
@@ -298,6 +349,10 @@ export async function analyzeWallet(
   const whaleometer = Math.round(Math.min(balanceEth, 100));
   const topFrenemy = findTopFrenemy(recipientCounts, address);
 
+  const portfolio = summarizePortfolio(holdings, nftCount);
+  const tokenActivity = summarizeTokenActivity(tokenTransfers, address);
+  const netWorthUsd = balanceUsd + portfolio.totalValueUsd;
+
   const nightRatio = totalTxs > 0 ? nightCount / totalTxs : 0;
   const swapRatio = totalTxs > 0 ? swapCount / totalTxs : 0;
   const now = Date.now();
@@ -314,7 +369,14 @@ export async function analyzeWallet(
     highSwapActivity: swapRatio > 0.4,
     newWallet: ageDays > 0 && ageDays < 30,
     dormant: daysSinceLast > 90,
-    whale: whaleometer >= 60,
+    whale: whaleometer >= 60 || netWorthUsd >= 50000,
+    diversifiedPortfolio: portfolio.tokenCount >= 5,
+    stablecoinHeavy:
+      portfolio.totalValueUsd > 0 &&
+      portfolio.stablecoinValueUsd / portfolio.totalValueUsd > 0.5,
+    crossChainUser: crossChain.total > 0,
+    nftCollector: nftCount >= 3,
+    contractHeavy: internalTxCount > totalTxs && totalTxs > 0,
   };
 
   // Heuristic confidence: more analyzed transactions and a more decisive
@@ -341,6 +403,11 @@ export async function analyzeWallet(
     gasBurnedUsd: totalGasUsd.toFixed(2),
     swapCount,
     activityBreakdown: breakdown,
+    portfolio,
+    tokenActivity,
+    internalTxCount,
+    crossChain,
+    netWorthUsd: netWorthUsd.toFixed(2),
     defiScore,
     airdropScore,
     degenScore,

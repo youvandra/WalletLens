@@ -1,7 +1,11 @@
-import type { OkLinkTransaction } from "./types.js";
+import type { OkLinkTransaction, TokenHolding, TokenTransfer, CrossChainActivity } from "./types.js";
 import {
   getAddressInfo,
   getAddressTransactions,
+  getTokenBalances,
+  getTokenTransactions,
+  getInternalTransactions,
+  getCrossChainTransactions,
 } from "./xlayer-client.js";
 
 export interface AddressProfile {
@@ -60,4 +64,112 @@ export async function fetchAllTransactions(
   }
 
   return allTxs;
+}
+
+// ---- Supplementary data (each degrades gracefully to empty on failure so a
+// single flaky endpoint never takes down the whole profile) ----
+
+async function safe<T>(fallback: T, fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch {
+    return fallback;
+  }
+}
+
+export async function fetchTokenHoldings(address: string): Promise<TokenHolding[]> {
+  return safe([] as TokenHolding[], async () => {
+    const holdings: TokenHolding[] = [];
+    for (let page = 1; page <= 2; page++) {
+      const data = await getTokenBalances(address, "token_20", page, 50);
+      for (const t of data.tokenList || []) {
+        holdings.push({
+          symbol: t.symbol,
+          contractAddress: t.tokenContractAddress,
+          amount: t.holdingAmount,
+          priceUsd: Number(t.priceUsd) || 0,
+          valueUsd: Number(t.valueUsd) || 0,
+        });
+      }
+      if (page >= parseInt(data.totalPage || "1", 10)) break;
+    }
+    return holdings;
+  });
+}
+
+export async function fetchNftCount(address: string): Promise<number> {
+  return safe(0, async () => {
+    const data = await getTokenBalances(address, "token_721", 1, 50);
+    const onPage = (data.tokenList || []).length;
+    const totalPage = parseInt(data.totalPage || "1", 10);
+    // Exact when it fits on one page; a lower bound (50+) otherwise.
+    return totalPage > 1 ? 50 : onPage;
+  });
+}
+
+export async function fetchTokenTransfers(address: string, maxPages = 2): Promise<TokenTransfer[]> {
+  return safe([] as TokenTransfer[], async () => {
+    const transfers: TokenTransfer[] = [];
+    for (let page = 1; page <= maxPages; page++) {
+      const data = await getTokenTransactions(address, "token_20", page, 50);
+      for (const t of data.transactionList || []) {
+        transfers.push({
+          txId: t.txId,
+          from: t.from,
+          to: t.to,
+          symbol: t.symbol,
+          amount: t.amount,
+          contractAddress: t.tokenContractAddress,
+          timestamp: parseInt(t.transactionTime || "0", 10),
+        });
+      }
+      if (page >= parseInt(data.totalPage || "1", 10)) break;
+    }
+    return transfers;
+  });
+}
+
+export async function fetchInternalTxCount(address: string): Promise<number> {
+  return safe(0, async () => {
+    const data = await getInternalTransactions(address, 1, 50);
+    const totalPage = parseInt(data.totalPage || "1", 10);
+    const onPage = (data.transactionList || []).length;
+    return totalPage > 1 ? totalPage * 50 : onPage; // approximation beyond page 1
+  });
+}
+
+export async function fetchCrossChainActivity(address: string): Promise<CrossChainActivity> {
+  return safe({ total: 0, deposits: 0, withdrawals: 0 }, async () => {
+    const data = await getCrossChainTransactions(address, 1, 50);
+    const list = data.data || [];
+    const deposits = list.filter((t) => t.crossType === "Deposit").length;
+    const withdrawals = list.length - deposits;
+    return { total: parseInt(data.total || "0", 10) || list.length, deposits, withdrawals };
+  });
+}
+
+export interface FullWalletData {
+  profile: AddressProfile;
+  transactions: OkLinkTransaction[];
+  holdings: TokenHolding[];
+  tokenTransfers: TokenTransfer[];
+  nftCount: number;
+  internalTxCount: number;
+  crossChain: CrossChainActivity;
+}
+
+// One-shot comprehensive fetch. Profile + native tx history are required;
+// everything else is best-effort and fetched in parallel.
+export async function fetchFullWalletData(address: string): Promise<FullWalletData> {
+  const [profile, transactions, holdings, tokenTransfers, nftCount, internalTxCount, crossChain] =
+    await Promise.all([
+      fetchAddressProfile(address),
+      fetchAllTransactions(address, 5),
+      fetchTokenHoldings(address),
+      fetchTokenTransfers(address),
+      fetchNftCount(address),
+      fetchInternalTxCount(address),
+      fetchCrossChainActivity(address),
+    ]);
+  return { profile, transactions, holdings, tokenTransfers, nftCount, internalTxCount, crossChain };
 }

@@ -49,6 +49,21 @@ export function buildMarkdown(
   lines.push(
     `- Activity: **${b.swap}** swaps · **${b.approve}** approvals · **${b.transfer}** transfers · **${b.native}** native · **${b.other}** other`
   );
+  lines.push(`- Internal (contract) txns: **${metrics.internalTxCount}**`);
+  lines.push(``);
+  lines.push(`**Portfolio** (net worth ≈ **$${metrics.netWorthUsd}**)`);
+  lines.push(
+    `- Tokens held: **${metrics.portfolio.tokenCount}** · NFTs: **${metrics.portfolio.nftCount}** · Stablecoins: **$${metrics.portfolio.stablecoinValueUsd}**`
+  );
+  for (const h of metrics.portfolio.topHoldings.slice(0, 3)) {
+    lines.push(`- ${h.symbol}: ${h.amount} ($${h.valueUsd})`);
+  }
+  lines.push(
+    `- Token transfers: **${metrics.tokenActivity.transferCount}** (${metrics.tokenActivity.inbound} in / ${metrics.tokenActivity.outbound} out, ${metrics.tokenActivity.uniqueTokens} tokens${metrics.tokenActivity.topToken ? `, most active: ${metrics.tokenActivity.topToken}` : ""})`
+  );
+  lines.push(
+    `- Cross-chain (TradeZone): **${metrics.crossChain.total}** transfers (${metrics.crossChain.deposits} deposits / ${metrics.crossChain.withdrawals} withdrawals)`
+  );
   lines.push(``);
   lines.push(`**Scores**`);
   lines.push(`- DeFi Score: **${metrics.defiScore}/100**`);

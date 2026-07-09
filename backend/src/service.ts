@@ -1,6 +1,6 @@
 // Shared wallet-profiling pipeline used by both the REST endpoint and the MCP
 // server, so the analysis logic lives in exactly one place.
-import { fetchAddressProfile, fetchAllTransactions } from "./fetcher.js";
+import { fetchFullWalletData } from "./fetcher.js";
 import { analyzeWallet } from "./analyzer.js";
 import { generatePersonality } from "./personality.js";
 import { buildMarkdown } from "./renderer.js";
@@ -28,9 +28,8 @@ export async function profileWallet(
     throw new Error("Invalid address format. Must be a 0x-prefixed 42-char address.");
   }
 
-  const profile = await fetchAddressProfile(address);
-  const transactions = await fetchAllTransactions(address, 5);
-  const metrics = await analyzeWallet(profile, transactions);
+  const data = await fetchFullWalletData(address);
+  const metrics = await analyzeWallet(data);
 
   if (opts.roast) {
     const personality = await generatePersonality(metrics);

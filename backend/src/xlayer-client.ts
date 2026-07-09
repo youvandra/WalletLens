@@ -121,3 +121,132 @@ export async function getAddressTransactions(
     `/api/v5/xlayer/address/transaction-list?chainShortName=xlayer&address=${address}&page=${page}&limit=${limit}`
   );
 }
+
+// ---- Token balances (ERC-20 / -721 / -1155 holdings) ----
+
+export interface XlayerTokenBalance {
+  symbol: string;
+  tokenContractAddress: string;
+  tokenType: string;
+  holdingAmount: string; // human-readable decimal string
+  priceUsd: string;
+  valueUsd: string;
+  tokenId: string;
+}
+
+export interface XlayerTokenBalanceList {
+  page: string;
+  limit: string;
+  totalPage: string;
+  tokenList: XlayerTokenBalance[];
+}
+
+export async function getTokenBalances(
+  address: string,
+  protocolType: "token_20" | "token_721" | "token_1155" = "token_20",
+  page = 1,
+  limit = 50
+): Promise<XlayerTokenBalanceList> {
+  return apiGet<XlayerTokenBalanceList>(
+    `/api/v5/xlayer/address/token-balance?chainShortName=xlayer&address=${address}&protocolType=${protocolType}&page=${page}&limit=${limit}`
+  );
+}
+
+// ---- Token transfers (ERC-20 transfer history of an address) ----
+
+export interface XlayerTokenTx {
+  txId: string;
+  height: string;
+  transactionTime: string;
+  from: string;
+  to: string;
+  tokenContractAddress: string;
+  tokenId: string;
+  amount: string; // human-readable decimal string
+  symbol: string;
+  isFromContract: boolean;
+  isToContract: boolean;
+}
+
+export interface XlayerTokenTxList {
+  page: string;
+  limit: string;
+  totalPage: string;
+  transactionList: XlayerTokenTx[];
+}
+
+export async function getTokenTransactions(
+  address: string,
+  protocolType: "token_20" | "token_721" | "token_1155" = "token_20",
+  page = 1,
+  limit = 50
+): Promise<XlayerTokenTxList> {
+  return apiGet<XlayerTokenTxList>(
+    `/api/v5/xlayer/address/token-transaction-list?chainShortName=xlayer&address=${address}&protocolType=${protocolType}&page=${page}&limit=${limit}`
+  );
+}
+
+// ---- Internal transactions (contract-triggered) ----
+
+export interface XlayerInternalTx {
+  txId: string;
+  height: string;
+  transactionTime: string;
+  from: string;
+  to: string;
+  isFromContract: boolean;
+  isToContract: boolean;
+  operation: string;
+  amount: string;
+  symbol: string;
+  state: string;
+}
+
+export interface XlayerInternalTxList {
+  page: string;
+  limit: string;
+  totalPage: string;
+  transactionList: XlayerInternalTx[];
+}
+
+export async function getInternalTransactions(
+  address: string,
+  page = 1,
+  limit = 50
+): Promise<XlayerInternalTxList> {
+  return apiGet<XlayerInternalTxList>(
+    `/api/v5/xlayer/address/internal-transaction-list?chainShortName=xlayer&address=${address}&page=${page}&limit=${limit}`
+  );
+}
+
+// ---- Cross-chain (X Layer <-> TradeZone) transfers ----
+
+export interface XlayerCrossChainTx {
+  txType: string; // "XLayerToTZ" | "TZToXLayer"
+  crossType: string; // "Deposit" | "Withdraw" | "BatchWithdraw"
+  status: string; // "0x1" success
+  from: string;
+  to: string;
+  value: string;
+  tokenType: string;
+  tokenName: string;
+  xlayerBlockTime: string;
+}
+
+export interface XlayerCrossChainList {
+  page: string;
+  limit: string;
+  totalPage: string;
+  total: string;
+  data: XlayerCrossChainTx[];
+}
+
+export async function getCrossChainTransactions(
+  address: string,
+  page = 1,
+  limit = 50
+): Promise<XlayerCrossChainList> {
+  return apiGet<XlayerCrossChainList>(
+    `/api/v5/xlayer/tz/cross/transaction-list?chainShortName=TRADE_ZONE&address=${address}&page=${page}&limit=${limit}`
+  );
+}

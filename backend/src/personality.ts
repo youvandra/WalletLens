@@ -44,6 +44,15 @@ function buildMetricsPrompt(metrics: WalletMetrics): string {
       gasBurned: metrics.gasBurnedEth,
       swapCount: metrics.swapCount,
       activityBreakdown: metrics.activityBreakdown,
+      portfolio: {
+        tokens: metrics.portfolio.tokenCount,
+        totalValueUsd: metrics.portfolio.totalValueUsd,
+        topHoldings: metrics.portfolio.topHoldings.map((h) => `${h.symbol} $${h.valueUsd}`),
+        nfts: metrics.portfolio.nftCount,
+      },
+      tokenActivity: metrics.tokenActivity,
+      crossChainTransfers: metrics.crossChain.total,
+      netWorthUsd: metrics.netWorthUsd,
       defiScore: metrics.defiScore,
       airdropScore: metrics.airdropScore,
       degenScore: metrics.degenScore,
@@ -95,7 +104,9 @@ export async function generatePersonality(
         { role: "user", content: buildMetricsPrompt(metrics) },
       ],
       temperature: 0.8,
-      max_tokens: 500,
+      // deepseek-v4-flash is a reasoning model: reasoning tokens count against
+      // max_tokens, so a small cap starves the actual content to empty.
+      max_tokens: 2500,
     };
 
     const res = await fetch(`${config.sumopodBaseUrl}/chat/completions`, {
@@ -118,7 +129,12 @@ export async function generatePersonality(
       throw new Error("Empty response from Sumopod API");
     }
 
-    const parsed = JSON.parse(content) as WalletPersonality;
+    // Models sometimes wrap JSON in markdown fences despite instructions.
+    const cleaned = content
+      .trim()
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/, "");
+    const parsed = JSON.parse(cleaned) as WalletPersonality;
 
     return {
       title: parsed.title || metrics.archetype,

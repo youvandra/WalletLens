@@ -20,6 +20,46 @@ export interface ActivityBreakdown {
   other: number;
 }
 
+export interface TokenHolding {
+  symbol: string;
+  contractAddress: string;
+  amount: string;
+  priceUsd: number;
+  valueUsd: number;
+}
+
+export interface TokenTransfer {
+  txId: string;
+  from: string;
+  to: string;
+  symbol: string;
+  amount: string;
+  contractAddress: string;
+  timestamp: number;
+}
+
+export interface CrossChainActivity {
+  total: number;
+  deposits: number;
+  withdrawals: number;
+}
+
+export interface PortfolioSummary {
+  tokenCount: number;
+  totalValueUsd: number;
+  stablecoinValueUsd: number;
+  topHoldings: { symbol: string; amount: string; valueUsd: number }[];
+  nftCount: number;
+}
+
+export interface TokenActivitySummary {
+  transferCount: number;
+  uniqueTokens: number;
+  inbound: number;
+  outbound: number;
+  topToken: string;
+}
+
 // Decision-grade behavioral flags an agent can act on. All heuristic and
 // derived only from analyzed on-chain activity.
 export interface WalletSignals {
@@ -31,6 +71,11 @@ export interface WalletSignals {
   newWallet: boolean;
   dormant: boolean;
   whale: boolean;
+  diversifiedPortfolio: boolean;
+  stablecoinHeavy: boolean;
+  crossChainUser: boolean;
+  nftCollector: boolean;
+  contractHeavy: boolean;
 }
 
 // What the analysis was based on, so an agent can weigh how much to trust it.
@@ -50,6 +95,11 @@ export interface WalletMetrics {
   gasBurnedUsd: string;
   swapCount: number;
   activityBreakdown: ActivityBreakdown;
+  portfolio: PortfolioSummary;
+  tokenActivity: TokenActivitySummary;
+  internalTxCount: number;
+  crossChain: CrossChainActivity;
+  netWorthUsd: string;
   defiScore: number;
   airdropScore: number;
   degenScore: number;

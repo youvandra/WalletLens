@@ -28,7 +28,7 @@ export function buildMcpServer(): McpServer {
     {
       title: "Profile wallet",
       description:
-        "Full structured on-chain behavioral profile of an X Layer wallet: archetype (with confidence), activity breakdown by type, DeFi/airdrop/degen/whale scores, behavioral signals, balance, top counterparty, and evidence. Use for due diligence or profiling before interacting with an address.",
+        "Full structured on-chain behavioral profile of an X Layer wallet: archetype (with confidence), activity breakdown by type, ERC-20 token portfolio with USD values, NFT count, token transfer flows (in/out), internal contract transactions, cross-chain (TradeZone) activity, net worth estimate, DeFi/airdrop/degen/whale scores, behavioral signals, top counterparty, and evidence. Use for due diligence or profiling before interacting with an address.",
       inputSchema: {
         address: ADDRESS,
         roast: z
@@ -109,6 +109,9 @@ export function buildMcpServer(): McpServer {
             archetype: metrics.archetype,
             confidence: metrics.archetypeConfidence,
             rarity: metrics.rarity,
+            netWorthUsd: metrics.netWorthUsd,
+            tokensHeld: metrics.portfolio.tokenCount,
+            crossChainTransfers: metrics.crossChain.total,
             scores: {
               defi: metrics.defiScore,
               degen: metrics.degenScore,

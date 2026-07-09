@@ -2,10 +2,10 @@
 
 ## Phase 1: Foundation
 - [x] `done` Create AGENTS.md, PLAN.md, TASKS.md, .gitignore
-- [ ] `pending` Initialize project structure (directories, package.json, tsconfig)
-- [ ] `pending` Setup Express server with basic health endpoint
+- [x] `done` Initialize project structure (directories, package.json, tsconfig)
+- [x] `done` Setup Express server with basic health endpoint
+- [x] `done` Create TypeScript types for all data structures
 - [ ] `pending` Setup environment config (OKLink API key, opencode API key)
-- [ ] `pending` Create TypeScript types for all data structures
 
 ## Phase 2: Fetcher
 - [ ] `pending` Implement OKLink API client (address_profile)

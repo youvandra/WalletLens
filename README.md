@@ -57,6 +57,11 @@ txwrap/
     └── favicon.ico           # Favicon
 ```
 
+## Deployment
+
+- **Backend**: `http://43.134.86.221:3008`
+- **Slideshow**: `http://43.134.86.221:3008/wrap/0x...`
+
 ## Submission
 
 - [OKX.AI Genesis Hackathon](https://www.hackquest.io/hackathons/OKXAI-Genesis-Hackathon)

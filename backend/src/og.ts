@@ -85,7 +85,7 @@ export function buildOgSvg(address: string, metrics: WalletMetrics): string {
   ${scoreChip(728, "WHALE", metrics.whaleometer, "#C68A00")}
 
   <!-- brand -->
-  <text x="1096" y="546" font-family="${FONT}" font-size="30" font-weight="bold" fill="#0a0a0a" text-anchor="end">TXWRAP.MY.ID</text>
+  <text x="1088" y="132" font-family="${FONT}" font-size="26" font-weight="bold" fill="#0a0a0a" text-anchor="end">TXWRAP.MY.ID</text>
 </svg>`;
 }
 

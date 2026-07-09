@@ -4,20 +4,38 @@
 
 Input any X Layer wallet address → get a shareable slideshow with on-chain stats, wallet archetype, AI personality roast, and scores.
 
-## Try It
-
-```bash
-curl -X POST https://[your-deployed-url]/api/txwrap \
-  -H "Content-Type: application/json" \
-  -d '{"address": "0x..."}'
-```
-
 ## Tech Stack
 
 - **Backend**: Node.js + TypeScript + Express
-- **Data Source**: X Layer Data API (OKX)
-- **AI**: opencode Zen API (wallet personality)
-- **Frontend**: Vanilla HTML/CSS/JS (neo-brutalism design)
+- **Data Source**: X Layer Data API (web3.okx.com) with HMAC-SHA256 auth
+- **AI**: opencode Zen API (wallet personality generation)
+- **Frontend**: Alpine.js + Tailwind CSS (CDN, no build step) — neo-brutalism design
+- **Payment**: x402 standard (OKX Payment SDK)
+
+## Quick Start
+
+```bash
+git clone https://github.com/youvandra/txwrap.git
+cd txwrap/backend
+
+# Set env vars
+export XLAYER_API_KEY=your_key
+export XLAYER_SECRET_KEY=your_secret
+export XLAYER_PASSPHRASE=your_passphrase
+export OPENGATE_API_KEY=your_opencode_key
+
+npm install
+npm run dev
+```
+
+## API
+
+```bash
+POST /api/txwrap
+Content-Type: application/json
+
+{"address": "0x..."}
+```
 
 ## Project Structure
 
@@ -28,13 +46,18 @@ txwrap/
 │       ├── index.ts          # Express server + MCP endpoint
 │       ├── config.ts         # Environment config
 │       ├── types.ts          # TypeScript types
-│       ├── xlayer-client.ts  # X Layer Data API client (HMAC auth)
+│       ├── xlayer-client.ts  # X Layer Data API (OKX HMAC auth)
 │       ├── fetcher.ts        # Data fetching
-│       ├── analyzer.ts       # Metrics engine
+│       ├── analyzer.ts       # Metrics engine (archetype, scores)
 │       ├── personality.ts    # opencode Zen API integration
 │       └── renderer.ts       # HTML slideshow builder
 └── frontend/
-    ├── index.html            # Slideshow template
-    ├── styles.css            # Neo-brutalism styles
-    └── script.js             # Slideshow interactivity
+    ├── index.html            # Alpine.js SPA + Tailwind CSS
+    ├── TW_logo.svg           # Logo
+    └── favicon.ico           # Favicon
 ```
+
+## Submission
+
+- [OKX.AI Genesis Hackathon](https://www.hackquest.io/hackathons/OKXAI-Genesis-Hackathon)
+- Deadline: Jul 17, 2026 23:59 UTC

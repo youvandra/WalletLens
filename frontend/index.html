@@ -3,134 +3,318 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TxWrap</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <link rel="stylesheet" href="styles.css">
+  <title>TxWrap — Your Wallet, Wrapped.</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
-  <div class="app" id="app">
+  <div x-data="txwrap()" class="min-h-screen bg-[#f0f0f0]" :class="loading && 'flex items-center justify-center'">
+
     <!-- Loading -->
-    <div class="container" id="loading">
-      <div class="spinner"></div>
-      <p>Wrapping your wallet...</p>
-    </div>
-
-    <!-- Connect -->
-    <div class="container" id="connect">
-      <h1 class="title">TxWrap</h1>
-      <p class="subtitle">Your Wallet, Wrapped.</p>
-      <div class="input-group">
-        <input type="text" id="addressInput" placeholder="0x..." class="input" spellcheck="false">
-        <button id="wrapBtn" class="btn">Wrap</button>
+    <template x-if="loading">
+      <div class="flex flex-col items-center gap-6 pt-48">
+        <div class="w-12 h-12 border-[4px] border-[#1a1a1a] border-t-[#ff6b35] animate-spin"></div>
+        <p class="font-['Courier_New'] text-[#888] uppercase text-sm tracking-widest">Wrapping your wallet...</p>
       </div>
-      <p class="hint">Enter any X Layer wallet address</p>
-    </div>
+    </template>
 
-    <!-- Slideshow (detached rendering) -->
-    <div id="slidesWrapper" style="display:none">
-      <div id="slidesContainer">
-        <!-- Slide 1: Cover -->
-        <div class="slide active" data-slide="0">
-          <div class="slide-cover">
-            <div class="logo-icon">TxWrap</div>
-            <h2 class="cover-address" id="coverAddress"></h2>
-            <p class="cover-sub">Your <span id="coverYear"></span> Wallet Wrapped</p>
+    <!-- Connect / Landing -->
+    <template x-if="!loading && !wrapped">
+      <div class="flex flex-col items-center gap-6 pt-24 px-4">
+        <!-- Logo -->
+        <img src="/TW_logo.svg" alt="TxWrap" class="w-64 h-auto">
+
+        <!-- Tagline -->
+        <p class="text-[#555] font-semibold uppercase tracking-[3px] text-sm">Your Wallet, Wrapped.</p>
+
+        <!-- About -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl w-full mt-4">
+          <div class="bg-white border-[3px] border-[#1a1a1a] p-4 shadow-[4px_4px_0px_#1a1a1a]">
+            <p class="text-[10px] uppercase tracking-widest font-bold text-[#888] mb-1">Archetype</p>
+            <p class="text-sm font-semibold">AI wallet personality & roast</p>
           </div>
-          <div class="slide-footer">TxWrap</div>
-        </div>
-
-        <!-- Slide 2: Archetype -->
-        <div class="slide" data-slide="1">
-          <div class="slide-label">Your Wallet Archetype</div>
-          <h2 class="archetype-title" id="archetypeTitle"></h2>
-          <p class="archetype-roast" id="archetypeRoast"></p>
-          <div class="slide-footer">TxWrap</div>
-        </div>
-
-        <!-- Slide 3: Stats Grid -->
-        <div class="slide" data-slide="2">
-          <div class="slide-label">Overview</div>
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-label">Balance</div>
-              <div class="stat-value gold" id="statBalance"></div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">Transactions</div>
-              <div class="stat-value blue" id="statTx"></div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">Gas Burned</div>
-              <div class="stat-value pink" id="statGas"></div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">Swaps</div>
-              <div class="stat-value green" id="statSwaps"></div>
-            </div>
+          <div class="bg-white border-[3px] border-[#1a1a1a] p-4 shadow-[4px_4px_0px_#1a1a1a]">
+            <p class="text-[10px] uppercase tracking-widest font-bold text-[#888] mb-1">Scores</p>
+            <p class="text-sm font-semibold">DeFi, Airdrop, Degen & more</p>
           </div>
-          <div class="slide-footer">TxWrap</div>
-        </div>
-
-        <!-- Slide 4: Scores -->
-        <div class="slide" data-slide="3">
-          <div class="slide-label">Scores</div>
-          <div class="scores-list">
-            <div class="score-row">
-              <span>DeFi Score</span>
-              <div class="bar-bg"><div class="bar-fill defi" id="barDefi"></div></div>
-              <span class="score-val" id="scoreDefi"></span>
-            </div>
-            <div class="score-row">
-              <span>Airdrop Score</span>
-              <div class="bar-bg"><div class="bar-fill airdrop" id="barAirdrop"></div></div>
-              <span class="score-val" id="scoreAirdrop"></span>
-            </div>
-            <div class="score-row">
-              <span>Degen Score</span>
-              <div class="bar-bg"><div class="bar-fill degen" id="barDegen"></div></div>
-              <span class="score-val" id="scoreDegen"></span>
-            </div>
-            <div class="score-row">
-              <span>Whaleometer</span>
-              <div class="bar-bg"><div class="bar-fill whale" id="barWhale"></div></div>
-              <span class="score-val" id="scoreWhale"></span>
-            </div>
+          <div class="bg-white border-[3px] border-[#1a1a1a] p-4 shadow-[4px_4px_0px_#1a1a1a]">
+            <p class="text-[10px] uppercase tracking-widest font-bold text-[#888] mb-1">Share</p>
+            <p class="text-sm font-semibold">Save as image or share on X</p>
           </div>
-          <div class="slide-footer">TxWrap</div>
         </div>
 
-        <!-- Slide 5: Fun Facts -->
-        <div class="slide" data-slide="4">
-          <div class="slide-label">Fun Facts</div>
-          <ul class="fun-facts" id="funFacts"></ul>
-          <div class="slide-footer">TxWrap</div>
+        <!-- Input -->
+        <div class="flex w-full max-w-[520px] border-[4px] border-[#1a1a1a] shadow-[6px_6px_0px_#1a1a1a] mt-2">
+          <input type="text" x-model="address" @keydown.enter="wrap()" placeholder="0x..." class="flex-1 px-5 py-4 border-none outline-none text-base font-['Courier_New'] bg-white text-[#1a1a1a]">
+          <button @click="wrap()" class="px-7 py-4 bg-[#ff6b35] text-white font-extrabold uppercase tracking-[1px] text-base border-l-[4px] border-[#1a1a1a] hover:bg-[#e85d2c] active:translate-x-[2px] active:translate-y-[2px]">Wrap</button>
+        </div>
+        <p class="font-['Courier_New'] text-xs text-[#888]">Enter any X Layer wallet address</p>
+      </div>
+    </template>
+
+    <!-- Slideshow -->
+    <template x-if="wrapped && !loading">
+      <div class="max-w-[680px] mx-auto px-4 py-8">
+        <div class="relative border-[4px] border-[#1a1a1a] shadow-[10px_10px_0px_#1a1a1a] bg-white overflow-hidden min-h-[480px]">
+
+          <!-- Slide 1: Cover -->
+          <div x-show="slide === 0" x-transition:enter.duration.300>
+            <div class="flex flex-col items-center justify-center min-h-[480px] p-12 gap-6">
+              <img src="/TW_logo.svg" alt="TxWrap" class="w-48">
+              <p class="font-['Courier_New'] text-[#555] break-all text-center" x-text="data.metrics ? shortAddr(data.address) : ''"></p>
+              <p class="text-[#888] uppercase tracking-[2px] font-bold text-sm">Your <span x-text="new Date().getFullYear()"></span> Wallet Wrapped</p>
+            </div>
+            <div class="absolute bottom-4 right-6 text-[10px] text-[#ccc] uppercase tracking-[2px] font-bold">TxWrap</div>
+          </div>
+
+          <!-- Slide 2: Archetype -->
+          <div x-show="slide === 1" x-transition:enter.duration.300>
+            <div class="min-h-[480px] p-12 flex flex-col justify-center gap-6">
+              <p class="text-[10px] uppercase tracking-[3px] text-[#888] font-bold border-b-[4px] border-[#1a1a1a] pb-2">Your Wallet Archetype</p>
+              <p class="text-4xl font-black" x-text="data.personality.title"></p>
+              <p class="text-[#555] leading-relaxed border-l-[4px] border-[#ff6b35] pl-4" x-text="data.personality.roast"></p>
+            </div>
+            <div class="absolute bottom-4 right-6 text-[10px] text-[#ccc] uppercase tracking-[2px] font-bold">TxWrap</div>
+          </div>
+
+          <!-- Slide 3: Stats Grid -->
+          <div x-show="slide === 2" x-transition:enter.duration.300>
+            <div class="min-h-[480px] p-12 flex flex-col justify-center gap-6">
+              <p class="text-[10px] uppercase tracking-[3px] text-[#888] font-bold border-b-[4px] border-[#1a1a1a] pb-2">Overview</p>
+              <div class="grid grid-cols-2 gap-3">
+                <template x-for="s in stats" :key="s.label">
+                  <div class="bg-[#f8f8f8] border-[3px] border-[#1a1a1a] p-5 shadow-[4px_4px_0px_#1a1a1a]">
+                    <p class="text-[10px] uppercase tracking-[2px] text-[#888] font-bold mb-2" x-text="s.label"></p>
+                    <p class="text-[28px] font-black" :class="s.color" x-text="s.value"></p>
+                  </div>
+                </template>
+              </div>
+            </div>
+            <div class="absolute bottom-4 right-6 text-[10px] text-[#ccc] uppercase tracking-[2px] font-bold">TxWrap</div>
+          </div>
+
+          <!-- Slide 4: Score Bars -->
+          <div x-show="slide === 3" x-transition:enter.duration.300>
+            <div class="min-h-[480px] p-12 flex flex-col justify-center gap-6">
+              <p class="text-[10px] uppercase tracking-[3px] text-[#888] font-bold border-b-[4px] border-[#1a1a1a] pb-2">Scores</p>
+              <div class="flex flex-col gap-4">
+                <template x-for="s in scoreData" :key="s.label">
+                  <div class="flex items-center gap-3">
+                    <span class="w-[140px] shrink-0 text-xs font-bold uppercase text-[#555]" x-text="s.label"></span>
+                    <div class="flex-1 h-3 bg-[#e0e0e0] border-[2px] border-[#1a1a1a]">
+                      <div class="h-full" :style="'width:' + s.value + '%'" :class="s.bar"></div>
+                    </div>
+                    <span class="w-10 text-right font-black text-lg" x-text="s.value"></span>
+                  </div>
+                </template>
+              </div>
+            </div>
+            <div class="absolute bottom-4 right-6 text-[10px] text-[#ccc] uppercase tracking-[2px] font-bold">TxWrap</div>
+          </div>
+
+          <!-- Slide 5: Fun Facts -->
+          <div x-show="slide === 4" x-transition:enter.duration.300>
+            <div class="min-h-[480px] p-12 flex flex-col justify-center gap-6">
+              <p class="text-[10px] uppercase tracking-[3px] text-[#888] font-bold border-b-[4px] border-[#1a1a1a] pb-2">Fun Facts</p>
+              <div class="flex flex-col gap-3">
+                <template x-for="(fact, i) in data.personality.funFacts" :key="i">
+                  <div class="bg-[#f8f8f8] border-[3px] border-[#1a1a1a] p-4 shadow-[4px_4px_0px_#1a1a1a] text-sm text-[#333] leading-relaxed" x-text="fact"></div>
+                </template>
+              </div>
+            </div>
+            <div class="absolute bottom-4 right-6 text-[10px] text-[#ccc] uppercase tracking-[2px] font-bold">TxWrap</div>
+          </div>
+
+          <!-- Slide 6: Trading Habits -->
+          <div x-show="slide === 5" x-transition:enter.duration.300>
+            <div class="min-h-[480px] p-12 flex flex-col justify-center gap-6">
+              <p class="text-[10px] uppercase tracking-[3px] text-[#888] font-bold border-b-[4px] border-[#1a1a1a] pb-2">Trading Habits</p>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="bg-[#f8f8f8] border-[3px] border-[#1a1a1a] p-5 shadow-[4px_4px_0px_#1a1a1a]">
+                  <p class="text-[10px] uppercase tracking-[2px] text-[#888] font-bold mb-2">Peak Hour</p>
+                  <p class="text-[28px] font-black text-[#2563eb]" x-text="peakHourLabel"></p>
+                </div>
+                <div class="bg-[#f8f8f8] border-[3px] border-[#1a1a1a] p-5 shadow-[4px_4px_0px_#1a1a1a]">
+                  <p class="text-[10px] uppercase tracking-[2px] text-[#888] font-bold mb-2">Activity Streak</p>
+                  <p class="text-[28px] font-black text-[#16a34a]" x-text="data.metrics.activityStreak + ' days'"></p>
+                </div>
+              </div>
+              <div class="bg-[#f8f8f8] border-[3px] border-[#1a1a1a] p-5 shadow-[4px_4px_0px_#1a1a1a]">
+                <p class="text-[10px] uppercase tracking-[2px] text-[#888] font-bold mb-2">Top Frenemy</p>
+                <p class="font-['Courier_New'] text-sm text-[#333] break-all" x-text="data.metrics.topFrenemy"></p>
+              </div>
+            </div>
+            <div class="absolute bottom-4 right-6 text-[10px] text-[#ccc] uppercase tracking-[2px] font-bold">TxWrap</div>
+          </div>
+
+          <!-- Slide 7: Verdict -->
+          <div x-show="slide === 6" x-transition:enter.duration.300>
+            <div class="min-h-[480px] p-12 flex flex-col justify-center items-center gap-6 text-center">
+              <p class="text-5xl">⚡</p>
+              <p class="text-2xl font-extrabold italic leading-relaxed text-[#1a1a1a] border-[4px] border-[#1a1a1a] p-6 shadow-[6px_6px_0px_#1a1a1a]" x-text="'\"' + data.personality.verdict + '\"'"></p>
+              <p class="text-sm text-[#888] uppercase tracking-[3px] font-bold">— TxWrap</p>
+            </div>
+            <div class="absolute bottom-4 right-6 text-[10px] text-[#ccc] uppercase tracking-[2px] font-bold">TxWrap</div>
+          </div>
+
+          <!-- Slide 8: Summary -->
+          <div x-show="slide === 7" x-transition:enter.duration.300>
+            <div class="min-h-[480px] p-12 flex flex-col justify-center gap-6">
+              <p class="text-[10px] uppercase tracking-[3px] text-[#888] font-bold border-b-[4px] border-[#1a1a1a] pb-2">In Summary</p>
+              <p class="text-2xl font-black" x-text="data.metrics.sarcasticTitle"></p>
+              <div class="flex gap-3 flex-wrap">
+                <template x-for="s in scoreData" :key="s.label">
+                  <div class="bg-[#f8f8f8] border-[3px] border-[#1a1a1a] px-4 py-3 text-center flex-1 shadow-[3px_3px_0px_#1a1a1a] min-w-[80px]">
+                    <p class="text-[10px] uppercase tracking-[1px] text-[#888] font-bold" x-text="s.label"></p>
+                    <p class="text-xl font-black mt-1" :class="s.color" x-text="s.value"></p>
+                  </div>
+                </template>
+              </div>
+              <button @click="shareX()" class="w-full py-4 bg-[#1a1a1a] text-white font-extrabold uppercase tracking-[2px] text-sm border-[3px] border-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a] hover:bg-[#333] active:translate-x-[2px] active:translate-y-[2px]">Share on X</button>
+            </div>
+            <div class="absolute bottom-4 right-6 text-[10px] text-[#ccc] uppercase tracking-[2px] font-bold">TxWrap</div>
+          </div>
         </div>
 
-        <!-- Slide 6: Verdict -->
-        <div class="slide" data-slide="5">
-          <div class="verdict-icon">⚡</div>
-          <p class="verdict-text" id="verdictText"></p>
-          <div class="verdict-sig">— TxWrap</div>
-          <div class="slide-footer">TxWrap</div>
+        <!-- Controls -->
+        <div class="flex justify-between items-center mt-6 gap-3 flex-wrap">
+          <div class="flex items-center gap-3">
+            <button @click="prev()" :disabled="slide === 0" class="w-12 h-12 bg-white border-[3px] border-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a] text-[#1a1a1a] text-xl font-black flex items-center justify-center hover:bg-[#f0f0f0] active:translate-x-[2px] active:translate-y-[2px] disabled:opacity-30 disabled:shadow-none disabled:active:translate-x-0 disabled:active:translate-y-0 disabled:cursor-not-allowed">←</button>
+            <span class="font-bold text-sm" x-text="(slide + 1) + ' / ' + totalSlides"></span>
+            <button @click="next()" :disabled="slide === totalSlides - 1" class="w-12 h-12 bg-white border-[3px] border-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a] text-[#1a1a1a] text-xl font-black flex items-center justify-center hover:bg-[#f0f0f0] active:translate-x-[2px] active:translate-y-[2px] disabled:opacity-30 disabled:shadow-none disabled:active:translate-x-0 disabled:active:translate-y-0 disabled:cursor-not-allowed">→</button>
+          </div>
+          <div class="flex gap-2">
+            <button @click="saveImage()" class="px-5 py-3 bg-white border-[3px] border-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a] text-[#1a1a1a] text-xs font-extrabold uppercase tracking-[1px] hover:bg-[#f0f0f0] active:translate-x-[2px] active:translate-y-[2px]">Save Image</button>
+            <button @click="shareX()" class="px-5 py-3 bg-white border-[3px] border-[#1a1a1a] shadow-[4px_4px_0px_#1a1a1a] text-[#1a1a1a] text-xs font-extrabold uppercase tracking-[1px] hover:bg-[#f0f0f0] active:translate-x-[2px] active:translate-y-[2px]">Share on X</button>
+          </div>
         </div>
       </div>
-
-      <!-- Controls -->
-      <div class="controls" id="controls">
-        <div class="nav">
-          <button id="prevBtn" class="nav-btn">←</button>
-          <span id="slideCounter">1 / 6</span>
-          <button id="nextBtn" class="nav-btn">→</button>
-        </div>
-        <div class="actions">
-          <button id="saveBtn" class="action-btn">Save as Image</button>
-          <button id="shareBtn" class="action-btn">Share on X</button>
-        </div>
-      </div>
-    </div>
+    </template>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    function txwrap() {
+      return {
+        address: '',
+        loading: false,
+        wrapped: false,
+        slide: 0,
+        totalSlides: 8,
+        data: { metrics: null, personality: null },
+        addressRaw: '',
+
+        get stats() {
+          const m = this.data.metrics
+          if (!m) return []
+          return [
+            { label: 'Balance', value: m.balanceEth + ' ETH', color: 'text-[#d4a017]' },
+            { label: 'Transactions', value: m.totalTx.toLocaleString(), color: 'text-[#2563eb]' },
+            { label: 'Gas Burned', value: m.gasBurnedEth + ' ETH', color: 'text-[#db2777]' },
+            { label: 'Swaps', value: m.swapCount, color: 'text-[#16a34a]' },
+          ]
+        },
+
+        get scoreData() {
+          const m = this.data.metrics
+          if (!m) return []
+          return [
+            { label: 'DeFi', value: m.defiScore, bar: 'bg-[#2563eb]', color: 'text-[#2563eb]' },
+            { label: 'Airdrop', value: m.airdropScore, bar: 'bg-[#9333ea]', color: 'text-[#9333ea]' },
+            { label: 'Degen', value: m.degenScore, bar: 'bg-[#db2777]', color: 'text-[#db2777]' },
+            { label: 'Whale', value: m.whaleometer, bar: 'bg-[#d4a017]', color: 'text-[#d4a017]' },
+          ]
+        },
+
+        get peakHourLabel() {
+          const h = this.data.metrics?.peakHour
+          if (h === undefined) return ''
+          const ampm = h >= 12 ? 'PM' : 'AM'
+          const hour = h % 12 || 12
+          return hour + ':00 ' + ampm
+        },
+
+        shortAddr(addr) {
+          if (!addr || addr.length < 16) return addr
+          return addr.slice(0, 10) + '...' + addr.slice(-6)
+        },
+
+        async wrap() {
+          const addr = this.address.trim()
+          if (!addr || !addr.startsWith('0x') || addr.length !== 42) {
+            alert('Please enter a valid 0x wallet address (42 characters)')
+            return
+          }
+          this.loading = true
+          this.addressRaw = addr
+          try {
+            const res = await fetch('/api/txwrap', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ address: addr }),
+            })
+            if (!res.ok) {
+              const err = await res.json()
+              throw new Error(err.error || 'Request failed')
+            }
+            const json = await res.json()
+            this.data = json.data
+            this.slide = 0
+            this.wrapped = true
+            this.loading = false
+            // animate score bars after render
+            this.$nextTick(() => {
+              const fills = document.querySelectorAll('.score-fill')
+              fills.forEach(el => { el.style.width = el.dataset.width })
+            })
+          } catch (e) {
+            this.loading = false
+            alert('Error: ' + e.message)
+          }
+        },
+
+        prev() { if (this.slide > 0) this.slide-- },
+        next() { if (this.slide < this.totalSlides - 1) this.slide++ },
+
+        async saveImage() {
+          const el = document.querySelector('#slidesContainer') || document.querySelector('.max-w-\\[680px\\] > div')
+          if (!el) return
+          try {
+            const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff', allowTaint: false, logging: false })
+            const link = document.createElement('a')
+            link.download = 'txwrap-' + Date.now() + '.png'
+            link.href = canvas.toDataURL('image/png')
+            link.click()
+          } catch (e) {
+            alert('Failed to generate image: ' + e.message)
+          }
+        },
+
+        shareX() {
+          const url = window.location.href
+          const text = '📊 Check out my wallet wrap! 🎰\n\n' + url + '\n\n#OKXAI #TxWrap'
+          window.open('https://x.com/intent/tweet?text=' + encodeURIComponent(text), '_blank', 'width=600,height=400')
+        },
+      }
+    }
+
+    // Auto-wrap from URL: /wrap/0x... or ?address=0x...
+    document.addEventListener('alpine:init', () => {
+      const path = window.location.pathname
+      const match = path.match(/\/wrap\/(0x[a-fA-F0-9]{40})/)
+      const addr = match ? match[1] : new URLSearchParams(window.location.search).get('address')
+      if (addr) {
+        setTimeout(() => {
+          const alpine = document.querySelector('[x-data]').__x
+          if (alpine) {
+            alpine.$data.address = addr
+            alpine.$data.wrap()
+          }
+        }, 100)
+      }
+    })
+  </script>
 </body>
 </html>

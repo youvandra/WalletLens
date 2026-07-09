@@ -2,11 +2,11 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { config } from "./config.js";
-import { fetchAddressProfile, fetchAllTransactions } from "./fetcher.js";
-import { analyzeWallet } from "./analyzer.js";
-import { generatePersonality } from "./personality.js";
-import { buildMarkdown, buildSlideshowHtml } from "./renderer.js";
+import { profileWallet, isValidAddress } from "./service.js";
+import { buildSlideshowHtml } from "./renderer.js";
+import { buildMcpServer } from "./mcp.js";
 import type { TxWrapRequest, TxWrapResponse } from "./types.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -32,11 +32,35 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "txwrap" });
 });
 
+// MCP server (stateless HTTP) — the agent-facing surface. Each request gets a
+// fresh server + transport so there is no cross-request session state.
+app.post("/mcp", async (req, res) => {
+  const server = buildMcpServer();
+  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+  res.on("close", () => {
+    transport.close();
+    server.close();
+  });
+  try {
+    await server.connect(transport);
+    await transport.handleRequest(req, res, req.body);
+  } catch (err) {
+    console.error("MCP error:", err);
+    if (!res.headersSent) res.status(500).json({ error: "MCP request failed" });
+  }
+});
+
+// Stateless mode: no session-based GET stream / DELETE.
+app.all("/mcp", (_req, res) => {
+  res.status(405).json({ error: "Method not allowed" });
+});
+
+// Human-facing endpoint: full profile plus the roast and a saved slideshow.
 app.post("/api/txwrap", async (req, res) => {
   try {
-    const { address, chainId } = req.body as TxWrapRequest;
+    const { address } = req.body as TxWrapRequest;
 
-    if (!address || !address.startsWith("0x") || address.length !== 42) {
+    if (!isValidAddress(address || "")) {
       const response: TxWrapResponse = {
         success: false,
         error: "Invalid address format. Must be a 0x-prefixed 42-char address.",
@@ -45,14 +69,10 @@ app.post("/api/txwrap", async (req, res) => {
       return;
     }
 
-    const profile = await fetchAddressProfile(address);
-    const transactions = await fetchAllTransactions(address, 5);
-    const metrics = await analyzeWallet(profile, transactions);
-    const personality = await generatePersonality(metrics);
-    const markdown = buildMarkdown(address, metrics, personality);
+    const { metrics, personality, markdown } = await profileWallet(address, { roast: true });
 
     // Generate and save slideshow HTML
-    const html = buildSlideshowHtml(address, metrics, personality);
+    const html = buildSlideshowHtml(address, metrics, personality!);
     if (!fs.existsSync(SLIDES_DIR)) {
       fs.mkdirSync(SLIDES_DIR, { recursive: true });
     }
@@ -66,9 +86,9 @@ app.post("/api/txwrap", async (req, res) => {
       success: true,
       data: {
         metrics,
-        personality,
+        personality: personality!,
         slideshowUrl,
-        markdown,
+        markdown: markdown!,
       },
     };
 

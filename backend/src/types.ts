@@ -12,6 +12,14 @@ export interface OkLinkTransaction {
   status: "success" | "fail";
 }
 
+export interface ActivityBreakdown {
+  swap: number;
+  approve: number;
+  transfer: number;
+  native: number;
+  other: number;
+}
+
 export interface WalletMetrics {
   totalTx: number;
   tokenSymbol: string;
@@ -20,6 +28,7 @@ export interface WalletMetrics {
   gasBurnedEth: string;
   gasBurnedUsd: string;
   swapCount: number;
+  activityBreakdown: ActivityBreakdown;
   defiScore: number;
   airdropScore: number;
   degenScore: number;
@@ -27,9 +36,11 @@ export interface WalletMetrics {
   whaleometer: number;
   uniqueProtocols: number;
   topFrenemy: string;
+  topFrenemyLabel: string;
   peakHour: number;
   activityStreak: number;
   archetype: WalletArchetype;
+  rarity: string;
   sarcasticTitle: string;
 }
 

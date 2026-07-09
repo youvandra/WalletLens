@@ -112,7 +112,10 @@
 
             <!-- 1: ARCHETYPE -->
             <div x-show="slide===1" class="reveal" :class="slide===1&&'run'">
-              <div class="badge pop text-xs mb-6">Your Wallet Archetype</div>
+              <div class="flex items-center gap-3 flex-wrap mb-6">
+                <div class="badge pop text-xs">Your Wallet Archetype</div>
+                <div class="badge pop text-xs" style="background:#fff;color:var(--ink);transform:rotate(3deg)" x-text="data.metrics.rarity + ' Rank'"></div>
+              </div>
               <h2 class="display pop mb-6" style="font-size:clamp(2.4rem,10vw,4.2rem)" x-text="data.personality.title"></h2>
               <div class="card pop p-5 text-lg font-bold leading-snug" x-text="data.personality.roast"></div>
             </div>
@@ -125,6 +128,11 @@
                 <div class="card pop p-5"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Transactions</p><p class="display" style="font-size:clamp(1.8rem,7vw,2.6rem);color:#2B4BFF" x-text="disp.totalTx.toLocaleString()"></p></div>
                 <div class="card pop p-5"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Gas Burned</p><p class="display" style="font-size:clamp(1.4rem,6vw,2rem);color:#FF2D8B"><span x-text="data.metrics.gasBurnedEth"></span> <span class="text-sm" x-text="sym"></span></p></div>
                 <div class="card pop p-5"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Swaps</p><p class="display" style="font-size:clamp(1.8rem,7vw,2.6rem);color:#00A676" x-text="disp.swaps.toLocaleString()"></p></div>
+              </div>
+              <div class="pop grid grid-cols-5 gap-2 mt-3">
+                <template x-for="a in activity" :key="a.label">
+                  <div class="card p-2 text-center"><p class="display text-lg" x-text="a.value"></p><p class="mono text-[9px] uppercase font-bold opacity-60 mt-0.5" x-text="a.label"></p></div>
+                </template>
               </div>
             </div>
 
@@ -161,7 +169,7 @@
                 <div class="card pop p-5"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Peak Hour</p><p class="display" style="font-size:clamp(1.6rem,6vw,2.2rem);color:#2B4BFF" x-text="peakHourLabel"></p></div>
                 <div class="card pop p-5"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Streak</p><p class="display" style="font-size:clamp(1.6rem,6vw,2.2rem);color:#00A676"><span x-text="data.metrics.activityStreak"></span><span class="text-base"> days</span></p></div>
               </div>
-              <div class="card pop p-4"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Top Frenemy</p><p class="mono text-sm font-bold break-all" x-text="data.metrics.topFrenemy"></p></div>
+              <div class="card pop p-4"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Top Frenemy</p><p class="display text-lg" x-text="data.metrics.topFrenemyLabel"></p><p class="mono text-xs break-all opacity-60 mt-1" x-text="data.metrics.topFrenemy"></p></div>
             </div>
 
             <!-- 6: VERDICT -->
@@ -256,6 +264,18 @@
           ];
         },
 
+        get activity() {
+          const b = this.data.metrics?.activityBreakdown;
+          if (!b) return [];
+          return [
+            { label: 'Swap', value: b.swap },
+            { label: 'Approve', value: b.approve },
+            { label: 'Transfer', value: b.transfer },
+            { label: 'Native', value: b.native },
+            { label: 'Other', value: b.other },
+          ];
+        },
+
         get peakHourLabel() {
           const h = this.data.metrics?.peakHour;
           if (h === undefined || h === null) return '';
@@ -325,8 +345,10 @@
             metrics: {
               totalTx: 847, tokenSymbol: 'OKB', balanceEth: '12.4821', balanceUsd: '624.10',
               gasBurnedEth: '3.2140', gasBurnedUsd: '160.70', swapCount: 213, defiScore: 78,
+              activityBreakdown: { swap: 213, approve: 47, transfer: 89, native: 61, other: 90 },
               airdropScore: 82, degenScore: 91, diamondHandsDays: 14, whaleometer: 67,
               uniqueProtocols: 19, topFrenemy: '0x8f3a9c2b1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f80',
+              topFrenemyLabel: '0x8f3a…7f80', rarity: 'S-Tier',
               peakHour: 2, activityStreak: 23, archetype: 'The 2AM Degen',
               sarcasticTitle: 'Serial Approver',
             },

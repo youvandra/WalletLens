@@ -20,13 +20,14 @@ export function buildMarkdown(
     metrics.peakHour >= 12
       ? `${metrics.peakHour % 12 || 12}:00 PM`
       : `${metrics.peakHour}:00 AM`;
+  const b = metrics.activityBreakdown;
 
   const lines: string[] = [];
 
   lines.push(`📊 **TxWrap Report**`);
   lines.push(`Wallet: \`${address.slice(0, 10)}...${address.slice(-6)}\``);
   lines.push(``);
-  lines.push(`**${personality.title}**`);
+  lines.push(`**${personality.title}** · Rarity: **${metrics.rarity}**`);
   lines.push(`> ${personality.roast}`);
   lines.push(``);
   lines.push(`**Stats**`);
@@ -35,6 +36,9 @@ export function buildMarkdown(
   lines.push(`- Gas Burned: **${metrics.gasBurnedEth} ${metrics.tokenSymbol}** ($${metrics.gasBurnedUsd})`);
   lines.push(`- Swaps: **${metrics.swapCount}**`);
   lines.push(`- Unique Protocols: **${metrics.uniqueProtocols}**`);
+  lines.push(
+    `- Activity: **${b.swap}** swaps · **${b.approve}** approvals · **${b.transfer}** transfers · **${b.native}** native · **${b.other}** other`
+  );
   lines.push(``);
   lines.push(`**Scores**`);
   lines.push(`- DeFi Score: **${metrics.defiScore}/100**`);
@@ -46,7 +50,7 @@ export function buildMarkdown(
   lines.push(`**Trading Habits**`);
   lines.push(`- Peak Trading Hour: **${hourLabel}**`);
   lines.push(`- Activity Streak: **${metrics.activityStreak} days**`);
-  lines.push(`- Top Frenemy: \`${metrics.topFrenemy}\``);
+  lines.push(`- Top Frenemy: **${metrics.topFrenemyLabel}** \`${metrics.topFrenemy}\``);
   lines.push(``);
   lines.push(`**Fun Facts**`);
   for (const fact of personality.funFacts) {

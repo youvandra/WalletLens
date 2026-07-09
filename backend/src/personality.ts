@@ -39,14 +39,18 @@ function buildMetricsPrompt(metrics: WalletMetrics): string {
   return JSON.stringify(
     {
       totalTransactions: metrics.totalTx,
-      balanceEth: metrics.balanceEth,
-      gasBurnedEth: metrics.gasBurnedEth,
+      tokenSymbol: metrics.tokenSymbol,
+      balance: metrics.balanceEth,
+      gasBurned: metrics.gasBurnedEth,
       swapCount: metrics.swapCount,
+      activityBreakdown: metrics.activityBreakdown,
       defiScore: metrics.defiScore,
       airdropScore: metrics.airdropScore,
       degenScore: metrics.degenScore,
+      rarityTier: metrics.rarity,
       diamondHandsDays: metrics.diamondHandsDays,
       uniqueProtocols: metrics.uniqueProtocols,
+      topFrenemy: metrics.topFrenemyLabel,
       peakTradingHour: metrics.peakHour,
       activityStreak: metrics.activityStreak,
       archetype: metrics.archetype,
@@ -60,7 +64,7 @@ function buildMetricsPrompt(metrics: WalletMetrics): string {
 function getFallbackPersonality(metrics: WalletMetrics): WalletPersonality {
   return {
     title: metrics.archetype,
-    roast: `You've made ${metrics.totalTx} transactions and burned ${metrics.gasBurnedEth} ETH on gas. That's certainly a choice.`,
+    roast: `You've made ${metrics.totalTx} transactions and burned ${metrics.gasBurnedEth} ${metrics.tokenSymbol} on gas. That's certainly a choice.`,
     funFacts: [
       `Your DeFi score is ${metrics.defiScore}/100 — ${
         metrics.defiScore > 50 ? "not bad" : "room for improvement"

@@ -2,53 +2,23 @@ import type {
   OkLinkTransaction,
   WalletMetrics,
   WalletArchetype,
+  ActivityBreakdown,
 } from "./types.js";
 import type { AddressProfile } from "./fetcher.js";
+import { classifyMethod, labelAddress } from "./labels.js";
 
 // X Layer's native gas token is OKB. The X Layer Data API returns balance,
 // amount, and txFee as human-readable decimal strings (already in token
 // units), NOT wei — so we parse them with Number(), never BigInt().
 const TOKEN_USD_PRICE = 50; // approximate OKB/USD
 
-// Known DEX method signatures on EVM (X Layer)
-const SWAP_METHODS = new Set([
-  "0x38ed1739", // swapExactTokensForTokens
-  "0x7ff36ab5", // swapExactETHForTokens
-  "0x4a25d94a", // swapTokensForExactETH
-  "0x18cbafe5", // swapExactTokensForETH
-  "0x5c11d795", // swapExactTokensForTokensSupportingFeeOnTransfer
-  "0x6a257603", // swapExactETHForTokensSupportingFeeOnTransfer
-  "0x791ac947", // swapExactTokensForETHSupportingFeeOnTransfer
-  "0xa9059cbb", // transfer (standard)
-  "0x095ea7b3", // approve
-  "0x022c0d9f", // swap (Uniswap V3)
-]);
-
-const SWAP_METHOD_MATCH = new Set([
-  "0x38ed1739",
-  "0x7ff36ab5",
-  "0x4a25d94a",
-  "0x18cbafe5",
-  "0x5c11d795",
-  "0x6a257603",
-  "0x791ac947",
-  "0x022c0d9f",
-]);
-
-const APPROVE_METHOD = "0x095ea7b3";
-
-function isContract(address: string): boolean {
-  return address.startsWith("0x") && address.length === 42;
-}
-
 function groupByAddress(txs: OkLinkTransaction[], address: string) {
   const recipientCounts = new Map<string, number>();
   const contractInteractions = new Set<string>();
+  const breakdown: ActivityBreakdown = { swap: 0, approve: 0, transfer: 0, native: 0, other: 0 };
   let firstTxTimestamp = Infinity;
   let lastTxTimestamp = 0;
-  let swapCount = 0;
   let nightCount = 0;
-  let approveCount = 0;
   const hourCounts = new Array(24).fill(0);
   const dailyActivity = new Set<string>();
 
@@ -73,14 +43,7 @@ function groupByAddress(txs: OkLinkTransaction[], address: string) {
       contractInteractions.add(to);
     }
 
-    const methodId = tx.methodId || "";
-    if (SWAP_METHOD_MATCH.has(methodId)) {
-      swapCount++;
-    }
-
-    if (methodId === APPROVE_METHOD) {
-      approveCount++;
-    }
+    breakdown[classifyMethod(tx.methodId)]++;
 
     if (hour >= 0 && hour < 6) {
       nightCount++;
@@ -90,11 +53,12 @@ function groupByAddress(txs: OkLinkTransaction[], address: string) {
   return {
     recipientCounts,
     contractInteractions,
+    breakdown,
     firstTxTimestamp,
     lastTxTimestamp,
-    swapCount,
+    swapCount: breakdown.swap,
     nightCount,
-    approveCount,
+    approveCount: breakdown.approve,
     hourCounts,
     dailyActivity,
     totalTxs: txs.length,
@@ -258,16 +222,28 @@ function generateSarcasticTitle(
   swapCount: number,
   totalGasEth: number,
   totalTxs: number,
-  archetype: WalletArchetype
+  archetype: WalletArchetype,
+  sym: string
 ): string {
   if (approveCount > 20) return `Serial Approver — You've approved ${approveCount} contracts`;
   if (swapCount > 50) return `Swapaholic — ${swapCount} swaps and counting`;
-  if (totalGasEth > 0.5) return `Gas Fee Enjoyer — You've burned ${totalGasEth.toFixed(2)} ETH on gas`;
+  if (totalGasEth > 0.5) return `Gas Fee Enjoyer — You've burned ${totalGasEth.toFixed(2)} ${sym} on gas`;
   if (totalTxs > 100) return `Professional Transactor`;
-  if (archetype === "The Micro Duster") return "Master of 0.001 ETH Transactions";
+  if (archetype === "The Micro Duster") return `Master of 0.001 ${sym} Transactions`;
   if (archetype === "The Tourist") return "Just Here for the Vibes";
   if (archetype === "The Sleepy Whale") return "Whale Watching in Progress";
   return "Crypto Enthusiast";
+}
+
+// Rarity tier derived from the wallet's own standout score. This is an honest
+// self-referential rank ("your strongest dimension is X"), not a claim about a
+// percentile of the whole X Layer population (which we do not have data for).
+function rarityTier(peakScore: number): string {
+  if (peakScore >= 90) return "S-Tier";
+  if (peakScore >= 75) return "A-Tier";
+  if (peakScore >= 55) return "B-Tier";
+  if (peakScore >= 35) return "C-Tier";
+  return "D-Tier";
 }
 
 export async function analyzeWallet(
@@ -281,6 +257,7 @@ export async function analyzeWallet(
   const {
     recipientCounts,
     contractInteractions,
+    breakdown,
     swapCount,
     nightCount,
     approveCount,
@@ -288,6 +265,7 @@ export async function analyzeWallet(
     dailyActivity,
     totalTxs,
   } = groupByAddress(transactions, address);
+  const sym = profile.balanceSymbol || "OKB";
 
   const { totalGasEth, totalGasUsd } = computeGasMetrics(transactions);
   const uniqueProtocols = contractInteractions.size;
@@ -308,34 +286,44 @@ export async function analyzeWallet(
     profile.transactionCount
   );
 
+  const defiScore = Math.round(Math.min(uniqueProtocols * 10, 100));
+  const airdropScore = computeAirdropScore(
+    uniqueProtocols,
+    Number(profile.firstTransactionTime) || Date.now(),
+    totalTxs
+  );
+  const degenScore = computeDegenScore(swapCount, totalTxs, nightCount, totalGasEth, balanceEth);
+  const whaleometer = Math.round(Math.min(balanceEth, 100));
+  const topFrenemy = findTopFrenemy(recipientCounts, address);
+
   return {
     totalTx: profile.transactionCount,
-    tokenSymbol: profile.balanceSymbol || "OKB",
+    tokenSymbol: sym,
     balanceEth: balanceEth.toFixed(4),
     balanceUsd: balanceUsd.toFixed(2),
     gasBurnedEth: totalGasEth.toFixed(4),
     gasBurnedUsd: totalGasUsd.toFixed(2),
     swapCount,
-    defiScore: Math.round(Math.min(uniqueProtocols * 10, 100)),
-    airdropScore: computeAirdropScore(
-      uniqueProtocols,
-      Number(profile.firstTransactionTime) || Date.now(),
-      totalTxs
-    ),
-    degenScore: computeDegenScore(swapCount, totalTxs, nightCount, totalGasEth, balanceEth),
+    activityBreakdown: breakdown,
+    defiScore,
+    airdropScore,
+    degenScore,
     diamondHandsDays: computeDiamondHands(transactions, address),
-    whaleometer: Math.round(Math.min((balanceEth / 100) * 100, 100)),
+    whaleometer,
     uniqueProtocols,
-    topFrenemy: findTopFrenemy(recipientCounts, address),
+    topFrenemy,
+    topFrenemyLabel: labelAddress(topFrenemy),
     peakHour: findPeakHour(hourCounts),
     activityStreak: computeActivityStreak(dailyActivity),
     archetype,
+    rarity: rarityTier(Math.max(defiScore, airdropScore, degenScore, whaleometer)),
     sarcasticTitle: generateSarcasticTitle(
       approveCount,
       swapCount,
       totalGasEth,
       totalTxs,
-      archetype
+      archetype,
+      sym
     ),
   };
 }

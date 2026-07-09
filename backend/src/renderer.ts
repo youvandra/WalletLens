@@ -30,6 +30,16 @@ export function buildMarkdown(
   lines.push(`**${personality.title}** · Rarity: **${metrics.rarity}**`);
   lines.push(`> ${personality.roast}`);
   lines.push(``);
+  const activeSignals = Object.entries(metrics.signals)
+    .filter(([, v]) => v)
+    .map(([k]) => k);
+  lines.push(
+    `Archetype confidence: **${Math.round(metrics.archetypeConfidence * 100)}%** · Signals: ${
+      activeSignals.length ? activeSignals.map((s) => `\`${s}\``).join(" ") : "none"
+    }`
+  );
+  lines.push(`Based on **${metrics.evidence.analyzedTx}** of ${metrics.evidence.totalTx} txns — ${metrics.evidence.caveat}`);
+  lines.push(``);
   lines.push(`**Stats**`);
   lines.push(`- Total Transactions: **${metrics.totalTx}**`);
   lines.push(`- Balance: **${metrics.balanceEth} ${metrics.tokenSymbol}** ($${metrics.balanceUsd})`);

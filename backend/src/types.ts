@@ -20,6 +20,27 @@ export interface ActivityBreakdown {
   other: number;
 }
 
+// Decision-grade behavioral flags an agent can act on. All heuristic and
+// derived only from analyzed on-chain activity.
+export interface WalletSignals {
+  nightOwl: boolean;
+  approvalHeavy: boolean;
+  likelyBot: boolean;
+  dustPattern: boolean;
+  highSwapActivity: boolean;
+  newWallet: boolean;
+  dormant: boolean;
+  whale: boolean;
+}
+
+// What the analysis was based on, so an agent can weigh how much to trust it.
+export interface AnalysisEvidence {
+  analyzedTx: number;
+  totalTx: number;
+  window: string;
+  caveat: string;
+}
+
 export interface WalletMetrics {
   totalTx: number;
   tokenSymbol: string;
@@ -40,6 +61,9 @@ export interface WalletMetrics {
   peakHour: number;
   activityStreak: number;
   archetype: WalletArchetype;
+  archetypeConfidence: number;
+  signals: WalletSignals;
+  evidence: AnalysisEvidence;
   rarity: string;
   sarcasticTitle: string;
 }

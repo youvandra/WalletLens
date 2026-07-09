@@ -3,6 +3,8 @@ import type {
   WalletMetrics,
   WalletArchetype,
   ActivityBreakdown,
+  WalletSignals,
+  AnalysisEvidence,
 } from "./types.js";
 import type { AddressProfile } from "./fetcher.js";
 import { classifyMethod, labelAddress } from "./labels.js";
@@ -296,6 +298,40 @@ export async function analyzeWallet(
   const whaleometer = Math.round(Math.min(balanceEth, 100));
   const topFrenemy = findTopFrenemy(recipientCounts, address);
 
+  const nightRatio = totalTxs > 0 ? nightCount / totalTxs : 0;
+  const swapRatio = totalTxs > 0 ? swapCount / totalTxs : 0;
+  const now = Date.now();
+  const firstTs = Number(profile.firstTransactionTime) || 0;
+  const lastTs = Number(profile.lastTransactionTime) || 0;
+  const ageDays = firstTs ? (now - firstTs) / 86400000 : 0;
+  const daysSinceLast = lastTs ? (now - lastTs) / 86400000 : Infinity;
+
+  const signals: WalletSignals = {
+    nightOwl: nightRatio > 0.3,
+    approvalHeavy: totalTxs > 0 && (approveCount / totalTxs > 0.2 || approveCount > 20),
+    likelyBot: archetype === "The Bot" || (nightRatio > 0.5 && totalTxs > 50),
+    dustPattern: avgTxValue < 0.001 && totalTxs > 20,
+    highSwapActivity: swapRatio > 0.4,
+    newWallet: ageDays > 0 && ageDays < 30,
+    dormant: daysSinceLast > 90,
+    whale: whaleometer >= 60,
+  };
+
+  // Heuristic confidence: more analyzed transactions and a more decisive
+  // standout score => higher confidence. Capped below 1 — we never claim
+  // certainty from a recent-activity window.
+  const sampleFactor = Math.min(totalTxs / 100, 1);
+  const decisiveness = Math.max(defiScore, degenScore, airdropScore, whaleometer) / 100;
+  const archetypeConfidence =
+    Math.round(Math.min(0.3 + 0.4 * sampleFactor + 0.3 * decisiveness, 0.95) * 100) / 100;
+
+  const evidence: AnalysisEvidence = {
+    analyzedTx: totalTxs,
+    totalTx: profile.transactionCount,
+    window: "most recent transactions",
+    caveat: "Derived from recent on-chain activity only, not full history.",
+  };
+
   return {
     totalTx: profile.transactionCount,
     tokenSymbol: sym,
@@ -316,6 +352,9 @@ export async function analyzeWallet(
     peakHour: findPeakHour(hourCounts),
     activityStreak: computeActivityStreak(dailyActivity),
     archetype,
+    archetypeConfidence,
+    signals,
+    evidence,
     rarity: rarityTier(Math.max(defiScore, airdropScore, degenScore, whaleometer)),
     sarcasticTitle: generateSarcasticTitle(
       approveCount,

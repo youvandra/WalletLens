@@ -15,6 +15,10 @@ const FRONTEND_DIR = path.join(__dirname, "..", "..", "frontend");
 
 const app = express();
 
+// Behind an nginx reverse proxy (TLS terminated there), so trust X-Forwarded-*
+// headers — this makes req.protocol reflect https for the slideshow URL.
+app.set("trust proxy", true);
+
 app.use(express.json());
 
 // Serve generated slides

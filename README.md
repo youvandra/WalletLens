@@ -58,7 +58,25 @@ made on data the agent can weigh — not a black box.
 
 - `POST /mcp` — MCP server (Streamable HTTP), the agent-facing surface
 - `POST /api/txwrap` — REST, human path: full profile + roast + saved slideshow
-- `GET /wrap/:address` — the shareable slideshow (human render)
+- `GET /wrap/:address` — the shareable slideshow (with dynamic OG card for X)
+- `GET /og/:address.png` — server-rendered 1200x630 share image
+- `GET /x402/info` — payment pricing / status
+
+## Pricing (x402)
+
+MCP tool calls are metered with the [x402](https://x402.org) standard, paid in
+**USDT on X Layer**:
+
+- **Freemium**: every IP gets `X402_FREE_DAILY` (default 20) free tool calls
+  per day — connecting, `initialize`, and `tools/list` are always free.
+- Past the quota the server answers **HTTP 402** with x402
+  `paymentRequirements`; the agent retries with an `X-PAYMENT` header.
+- Configure via env: `X402_MODE` (`off` | `demo` | `facilitator`),
+  `X402_PAY_TO`, `X402_PRICE_USD`, `X402_FREE_DAILY`, `X402_FACILITATOR_URL`.
+- `demo` mode validates the payment payload but does not settle on-chain (no
+  public x402 facilitator exists for X Layer yet); the `X-PAYMENT-RESPONSE`
+  header says so honestly. Point `X402_FACILITATOR_URL` at a facilitator to
+  enable real settlement.
 
 ## Tech Stack
 
@@ -67,7 +85,8 @@ made on data the agent can weigh — not a black box.
 - **Data Source**: X Layer Data API (web3.okx.com) with HMAC-SHA256 auth
 - **AI**: Sumopod API (`deepseek-v4-flash`, optional roast layer)
 - **Frontend**: Alpine.js + Tailwind CSS (CDN, no build step) — neo-brutalism
-- **Payment**: x402 standard (OKX Payment SDK) — planned
+- **Share cards**: server-rendered SVG → PNG (`@resvg/resvg-js`)
+- **Payment**: x402 standard — freemium + HTTP 402, USDT on X Layer
 
 ## Quick Start
 
@@ -89,9 +108,10 @@ Point any MCP client at `http://<host>:<port>/mcp` and call the tools above.
 
 ## Deployment
 
-- **Backend**: `http://43.134.86.221:3008`
-- **MCP endpoint**: `http://43.134.86.221:3008/mcp`
-- **Slideshow**: `http://43.134.86.221:3008/wrap/0x...`
+- **App**: https://txwrap.my.id
+- **MCP endpoint**: `https://txwrap.my.id/mcp`
+- **Slideshow**: `https://txwrap.my.id/wrap/0x...`
+- **Pricing info**: `https://txwrap.my.id/x402/info`
 
 ## Submission
 

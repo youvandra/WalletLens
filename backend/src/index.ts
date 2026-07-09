@@ -7,7 +7,9 @@ import { config } from "./config.js";
 import { profileWallet, isValidAddress } from "./service.js";
 import { buildSlideshowHtml } from "./renderer.js";
 import { buildMcpServer } from "./mcp.js";
-import type { TxWrapRequest, TxWrapResponse } from "./types.js";
+import { x402Gate, x402Info } from "./x402.js";
+import { renderOgPng } from "./og.js";
+import type { TxWrapRequest, TxWrapResponse, WalletMetrics } from "./types.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SLIDES_DIR = path.join(__dirname, "..", "slides");
@@ -27,18 +29,74 @@ app.use("/slides", express.static(SLIDES_DIR));
 // Serve frontend static files
 app.use(express.static(FRONTEND_DIR));
 
-// Handle /wrap/:address route — serve frontend, JS picks up the address
+// Handle /wrap/:address route — serve the SPA with per-address Open Graph
+// meta injected so shared links unfurl into a rich card (crawlers don't run
+// JS, so the tags must be server-side).
 app.get("/wrap/:address", (req, res) => {
-  res.sendFile(path.join(FRONTEND_DIR, "index.html"));
+  const address = req.params.address;
+  const html = fs.readFileSync(path.join(FRONTEND_DIR, "index.html"), "utf-8");
+  if (!isValidAddress(address)) {
+    res.type("html").send(html);
+    return;
+  }
+  const base = `${req.protocol}://${req.get("host")}`;
+  const shortAddr = `${address.slice(0, 10)}...${address.slice(-6)}`;
+  const meta = `
+  <meta property="og:title" content="TxWrap — ${shortAddr}, Wrapped.">
+  <meta property="og:description" content="On-chain behavioral profile: archetype, scores, portfolio and roast for ${shortAddr} on X Layer.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="${base}/wrap/${address}">
+  <meta property="og:image" content="${base}/og/${address}.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="${base}/og/${address}.png">
+`;
+  res.type("html").send(html.replace("</head>", `${meta}</head>`));
+});
+
+// Dynamic OG share image. Uses metrics cached at wrap time when available,
+// otherwise profiles the wallet fresh (no roast needed for the image).
+app.get("/og/:address.png", async (req, res) => {
+  try {
+    const address = req.params.address;
+    if (!isValidAddress(address)) {
+      res.status(400).send("invalid address");
+      return;
+    }
+    const pngPath = path.join(SLIDES_DIR, `${address.toLowerCase()}.png`);
+    if (!fs.existsSync(pngPath)) {
+      const jsonPath = path.join(SLIDES_DIR, `${address.toLowerCase()}.json`);
+      let metrics: WalletMetrics;
+      if (fs.existsSync(jsonPath)) {
+        metrics = JSON.parse(fs.readFileSync(jsonPath, "utf-8")) as WalletMetrics;
+      } else {
+        metrics = (await profileWallet(address)).metrics;
+      }
+      if (!fs.existsSync(SLIDES_DIR)) fs.mkdirSync(SLIDES_DIR, { recursive: true });
+      fs.writeFileSync(pngPath, renderOgPng(address, metrics));
+    }
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.type("png").send(fs.readFileSync(pngPath));
+  } catch (err) {
+    console.error("OG image error:", err);
+    res.status(500).send("og render failed");
+  }
 });
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "txwrap" });
 });
 
+// x402 pricing / status info for agents and judges.
+app.get("/x402/info", (_req, res) => {
+  res.json(x402Info());
+});
+
 // MCP server (stateless HTTP) — the agent-facing surface. Each request gets a
 // fresh server + transport so there is no cross-request session state.
-app.post("/mcp", async (req, res) => {
+// Tool calls are metered by the x402 gate (freemium + HTTP 402).
+app.post("/mcp", x402Gate, async (req, res) => {
   const server = buildMcpServer();
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
   res.on("close", () => {
@@ -82,6 +140,15 @@ app.post("/api/txwrap", async (req, res) => {
     }
     const slideFile = `${address.toLowerCase()}.html`;
     fs.writeFileSync(path.join(SLIDES_DIR, slideFile), html, "utf-8");
+
+    // Cache metrics for the OG image and drop any stale render.
+    fs.writeFileSync(
+      path.join(SLIDES_DIR, `${address.toLowerCase()}.json`),
+      JSON.stringify(metrics),
+      "utf-8"
+    );
+    const stalePng = path.join(SLIDES_DIR, `${address.toLowerCase()}.png`);
+    if (fs.existsSync(stalePng)) fs.unlinkSync(stalePng);
 
     const baseUrl = `${req.protocol}://${req.get("host") || `localhost:${config.port}`}`;
     const slideshowUrl = `${baseUrl}/wrap/${address}`;

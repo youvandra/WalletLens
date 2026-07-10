@@ -343,8 +343,10 @@ reliability that both depend on.
   trip X Layer throttling. Tunable via `PROFILE_CACHE_TTL_MS`.
 
 ### Virality
-- **Roast on the share card** — bake one roast line into [`og.ts`](backend/src/og.ts)
-  so a shared `/wrap/:address` link unfurls with the joke, not just the metrics.
+- **Roast on the share card** ✅ *shipped* — the `/og/:address.png` card now
+  carries a roast line ([`og.ts`](backend/src/og.ts)). A wrapped wallet gets its
+  real AI roast baked in at wrap time; any other wallet falls back to the
+  deterministic sarcastic title, so the line is always present, no extra AI call.
 - **Real population percentiles** — once `/api/stats` accumulates enough wallets,
   replace the self-referential `rarity` tier with true *"top X%"* framing (which
   updates the *No fabricated percentiles* honesty rule honestly, on real data).

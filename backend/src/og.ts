@@ -21,6 +21,11 @@ function plain(s: string): string {
   return s.replace(/[^\x20-\x7E]/g, "").trim();
 }
 
+// SVG <text> does not wrap, so keep the roast line to a single legible row.
+function truncate(s: string, max: number): string {
+  return s.length > max ? s.slice(0, max - 1).trimEnd() + "..." : s;
+}
+
 function scoreChip(x: number, label: string, value: number, color: string): string {
   return `
   <g transform="translate(${x},476)">
@@ -31,10 +36,17 @@ function scoreChip(x: number, label: string, value: number, color: string): stri
   </g>`;
 }
 
-export function buildOgSvg(address: string, metrics: WalletMetrics): string {
+export function buildOgSvg(
+  address: string,
+  metrics: WalletMetrics,
+  // The roast line: an explicit personality roast when we have one, otherwise
+  // the deterministic sarcastic title (always present, no AI call needed).
+  roast?: string
+): string {
   const archetype = esc(plain(metrics.archetype) || "Wallet Wrapped");
   const shortAddr = `${address.slice(0, 10)}...${address.slice(-6)}`;
   const year = new Date().getFullYear();
+  const roastLine = esc(truncate(plain(roast || metrics.sarcasticTitle), 64));
 
   return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -76,6 +88,9 @@ export function buildOgSvg(address: string, metrics: WalletMetrics): string {
     <text x="100" y="36" font-family="${FONT}" font-size="24" font-weight="bold" fill="#0a0a0a" text-anchor="middle">${esc(metrics.rarity)} RANK</text>
   </g>
 
+  <!-- roast line -->
+  ${roastLine ? `<text x="104" y="378" font-family="${FONT}" font-size="27" font-weight="bold" fill="#0a0a0a">&#8220;${roastLine}&#8221;</text>` : ""}
+
   <!-- stats row -->
   <text x="104" y="420" font-family="${FONT}" font-size="30" font-weight="bold" fill="#0a0a0a">${metrics.totalTx.toLocaleString("en-US")} txns&#160;&#160;·&#160;&#160;${metrics.swapCount} swaps&#160;&#160;·&#160;&#160;net worth $${esc(metrics.netWorthUsd)}</text>
 
@@ -89,8 +104,8 @@ export function buildOgSvg(address: string, metrics: WalletMetrics): string {
 </svg>`;
 }
 
-export function renderOgPng(address: string, metrics: WalletMetrics): Buffer {
-  const svg = buildOgSvg(address, metrics);
+export function renderOgPng(address: string, metrics: WalletMetrics, roast?: string): Buffer {
+  const svg = buildOgSvg(address, metrics, roast);
   const resvg = new Resvg(svg, {
     fitTo: { mode: "width", value: W },
     font: { loadSystemFonts: true },

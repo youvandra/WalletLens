@@ -159,8 +159,14 @@ app.post("/api/txwrap", async (req, res) => {
       JSON.stringify(metrics),
       "utf-8"
     );
-    const stalePng = path.join(SLIDES_DIR, `${address.toLowerCase()}.png`);
-    if (fs.existsSync(stalePng)) fs.unlinkSync(stalePng);
+    // Pre-render the share card with the real roast line now that we have it,
+    // so a shared /wrap link unfurls with the joke — not just the metrics. The
+    // lazy /og route still covers wallets that were never wrapped (it falls
+    // back to the deterministic sarcastic title).
+    fs.writeFileSync(
+      path.join(SLIDES_DIR, `${address.toLowerCase()}.png`),
+      renderOgPng(address, metrics, personality!.roast)
+    );
 
     recordWrap(address);
 

@@ -148,8 +148,8 @@
             <a href="https://www.okx.ai/agents/4938" target="_blank" rel="noopener" class="cta rv">
               Try TxWrap on OKX.AI <span>→</span>
             </a>
-            <button @click="loadSample()" class="rv mono text-xs uppercase tracking-widest font-bold underline underline-offset-4 hover:text-[#FF2D8B]" style="margin-top:22px">
-              or peek at a sample wrap
+            <button @click="scrollToWrap()" class="rv mono text-xs uppercase tracking-widest font-bold underline underline-offset-4 hover:text-[#FF2D8B]" style="margin-top:22px">
+              or wrap your own wallet ↓
             </button>
             <div class="rv mono text-[11px] uppercase tracking-widest font-bold opacity-60" style="margin-top:14px">
               Agent&nbsp;ID&nbsp;#4938 · X&nbsp;Layer · 0.05 USDT0 per call
@@ -297,7 +297,7 @@
         </section>
 
         <!-- 8 · HUMAN LAYER -->
-        <section class="sec" style="background:#EDE7DB">
+        <section id="wrap" class="sec" style="background:#EDE7DB">
           <div class="deco deco-7"></div>
           <div class="wrapx text-center">
             <div class="eyebrow rv">Bonus layer</div>
@@ -749,6 +749,11 @@
           };
           this.slide = 0;
           this.wrapped = true;
+        },
+
+        scrollToWrap() {
+          const el = document.getElementById('wrap');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         },
 
         reset() { this.wrapped = false; this.slide = 0; this.address = ''; },

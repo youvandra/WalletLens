@@ -1,0 +1,170 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { analyzeWallet } from "./analyzer.js";
+import type { FullWalletData, AddressProfile } from "./fetcher.js";
+import type { OkLinkTransaction } from "./types.js";
+
+const SWAP = "0x38ed1739"; // swapExactTokensForTokens
+const SUBJECT = "0x1111111111111111111111111111111111111111";
+
+// UTC hour helper — X Layer transactionTime is epoch milliseconds.
+function tsAt(dayOffset: number, hourUtc: number): number {
+  return Date.UTC(2025, 0, 1 + dayOffset, hourUtc, 0, 0);
+}
+
+function tx(over: Partial<OkLinkTransaction> = {}): OkLinkTransaction {
+  return {
+    txId: Math.random().toString(36).slice(2),
+    from: SUBJECT,
+    to: "0x2222222222222222222222222222222222222222",
+    value: "0.5",
+    gasUsed: "0",
+    gasPrice: "0",
+    txFee: "0.001",
+    blockHeight: 1,
+    timestamp: tsAt(0, 12),
+    methodId: undefined,
+    status: "success",
+    ...over,
+  };
+}
+
+function makeData(over: Partial<FullWalletData> = {}): FullWalletData {
+  const transactions = over.transactions ?? [];
+  const profile: AddressProfile = {
+    address: SUBJECT,
+    balance: "2.0",
+    balanceSymbol: "OKB",
+    transactionCount: transactions.length,
+    firstTransactionTime: String(tsAt(0, 12)),
+    lastTransactionTime: String(tsAt(0, 12)),
+    ...over.profile,
+  };
+  return {
+    profile,
+    transactions,
+    holdings: [],
+    tokenTransfers: [],
+    nftCount: 0,
+    internalTxCount: 0,
+    crossChain: { total: 0, deposits: 0, withdrawals: 0 },
+    ...over,
+    // keep the derived tx count consistent even when profile is overridden
+    ...(over.profile ? { profile: { ...profile, ...over.profile } } : {}),
+  };
+}
+
+test("empty wallet profiles as The Ghost with high confidence", async () => {
+  const m = await analyzeWallet(
+    makeData({
+      transactions: [],
+      profile: {
+        address: SUBJECT,
+        balance: "0",
+        balanceSymbol: "OKB",
+        transactionCount: 0,
+        firstTransactionTime: "",
+        lastTransactionTime: "",
+      },
+    }),
+    10
+  );
+  assert.equal(m.archetype, "The Ghost");
+  assert.equal(m.archetypeConfidence, 0.95);
+  assert.equal(m.evidence.analyzedTx, 0);
+  assert.equal(m.evidence.totalTx, 0);
+});
+
+test("swap-heavy nocturnal wallet is The 2AM Degen", async () => {
+  const transactions = Array.from({ length: 10 }, (_, i) =>
+    tx({
+      methodId: SWAP,
+      to: `0x33333333333333333333333333333333333333${(10 + i).toString()}`,
+      timestamp: tsAt(0, 2), // 2AM UTC
+    })
+  );
+  const m = await analyzeWallet(makeData({ transactions }), 10);
+  assert.equal(m.archetype, "The 2AM Degen");
+  assert.equal(m.swapCount, 10);
+  assert.equal(m.peakHour, 2);
+  assert.equal(m.signals.nightOwl, true);
+  assert.equal(m.signals.highSwapActivity, true);
+});
+
+test("quiet high-balance wallet is The Diamond HODLer", async () => {
+  const transactions = Array.from({ length: 12 }, () =>
+    tx({ methodId: undefined, value: "1.0" })
+  );
+  const m = await analyzeWallet(
+    makeData({
+      transactions,
+      profile: {
+        address: SUBJECT,
+        balance: "5.0",
+        balanceSymbol: "OKB",
+        transactionCount: 12,
+        firstTransactionTime: String(tsAt(0, 12)),
+        lastTransactionTime: String(tsAt(0, 12)),
+      },
+    }),
+    10
+  );
+  assert.equal(m.archetype, "The Diamond HODLer");
+});
+
+test("USD figures scale with the injected OKB price", async () => {
+  const m = await analyzeWallet(makeData({ transactions: [tx()] }), 100);
+  // balance 2.0 OKB * $100 = $200
+  assert.equal(m.balanceUsd, "200.00");
+});
+
+test("defiScore is 10 per unique contract, capped at 100", async () => {
+  const transactions = Array.from({ length: 12 }, (_, i) =>
+    tx({ to: `0x4444444444444444444444444444444444444${(100 + i).toString()}` })
+  );
+  const m = await analyzeWallet(makeData({ transactions }), 10);
+  assert.equal(m.uniqueProtocols, 12);
+  assert.equal(m.defiScore, 100); // min(12*10, 100)
+});
+
+test("contractHeavy fires only when internal tx count exceeds analyzed tx", async () => {
+  const transactions = Array.from({ length: 5 }, () => tx());
+  const heavy = await analyzeWallet(
+    makeData({ transactions, internalTxCount: 20 }),
+    10
+  );
+  assert.equal(heavy.signals.contractHeavy, true);
+
+  const light = await analyzeWallet(
+    makeData({ transactions, internalTxCount: 2 }),
+    10
+  );
+  assert.equal(light.signals.contractHeavy, false);
+});
+
+test("activityStreak counts the longest run of consecutive days", async () => {
+  const transactions = [
+    tx({ timestamp: tsAt(0, 12) }),
+    tx({ timestamp: tsAt(1, 12) }),
+    tx({ timestamp: tsAt(2, 12) }),
+    // gap
+    tx({ timestamp: tsAt(10, 12) }),
+  ];
+  const m = await analyzeWallet(makeData({ transactions }), 10);
+  assert.equal(m.activityStreak, 3);
+});
+
+test("stablecoin-dominant portfolio sets stablecoinHeavy", async () => {
+  const m = await analyzeWallet(
+    makeData({
+      transactions: [tx()],
+      holdings: [
+        { symbol: "USDT", contractAddress: "0xa", amount: "800", priceUsd: 1, valueUsd: 800 },
+        { symbol: "WOKB", contractAddress: "0xb", amount: "1", priceUsd: 50, valueUsd: 50 },
+      ],
+    }),
+    10
+  );
+  assert.equal(m.signals.stablecoinHeavy, true);
+  assert.equal(m.portfolio.stablecoinValueUsd, 800);
+});

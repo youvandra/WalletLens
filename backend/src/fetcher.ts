@@ -126,13 +126,23 @@ export async function fetchTokenHoldings(address: string): Promise<TokenHolding[
   });
 }
 
+// Page size shared by the count helpers below. Pages 1..totalPage-1 are always
+// full; only the last page is partial. So a multi-page result has a guaranteed
+// lower bound of (totalPage-1)*PAGE_SIZE + 1 — we report that floor rather than
+// totalPage*PAGE_SIZE, which over-counted by up to PAGE_SIZE-1.
+const PAGE_SIZE = 50;
+
+function lowerBoundCount(onPage: number, totalPage: number): number {
+  if (totalPage <= 1) return onPage; // exact
+  return (totalPage - 1) * PAGE_SIZE + 1; // guaranteed floor
+}
+
 export async function fetchNftCount(address: string): Promise<number> {
   return safe(0, async () => {
-    const data = await getTokenBalances(address, "token_721", 1, 50);
+    const data = await getTokenBalances(address, "token_721", 1, PAGE_SIZE);
     const onPage = (data.tokenList || []).length;
     const totalPage = parseInt(data.totalPage || "1", 10);
-    // Exact when it fits on one page; a lower bound (50+) otherwise.
-    return totalPage > 1 ? 50 : onPage;
+    return lowerBoundCount(onPage, totalPage);
   });
 }
 
@@ -160,10 +170,10 @@ export async function fetchTokenTransfers(address: string, maxPages = 2): Promis
 
 export async function fetchInternalTxCount(address: string): Promise<number> {
   return safe(0, async () => {
-    const data = await getInternalTransactions(address, 1, 50);
+    const data = await getInternalTransactions(address, 1, PAGE_SIZE);
     const totalPage = parseInt(data.totalPage || "1", 10);
     const onPage = (data.transactionList || []).length;
-    return totalPage > 1 ? totalPage * 50 : onPage; // approximation beyond page 1
+    return lowerBoundCount(onPage, totalPage);
   });
 }
 

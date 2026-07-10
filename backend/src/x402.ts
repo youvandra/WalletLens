@@ -27,9 +27,22 @@ const isEnabled = () => config.x402Mode !== "off" && !!config.x402PayTo;
 // ---- Per-IP daily free quota (in-memory; single-process pm2 app) ----
 
 const quota = new Map<string, { day: string; used: number }>();
+let sweepDay = "";
+
+// Drop entries left over from previous days so the map does not grow unbounded
+// across a long-running process. Quota resets daily anyway, so anything not
+// dated today is dead weight. Runs at most once per day (first call of the day).
+function sweepStale(day: string): void {
+  if (day === sweepDay) return;
+  for (const [ip, entry] of quota) {
+    if (entry.day !== day) quota.delete(ip);
+  }
+  sweepDay = day;
+}
 
 function takeFreeCall(ip: string): number {
   const day = new Date().toISOString().slice(0, 10);
+  sweepStale(day);
   const entry = quota.get(ip);
   if (!entry || entry.day !== day) {
     quota.set(ip, { day, used: 1 });

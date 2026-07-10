@@ -12,13 +12,14 @@ import type {
 } from "./types.js";
 import type { AddressProfile, FullWalletData } from "./fetcher.js";
 import { classifyMethod, labelAddress } from "./labels.js";
+import { getOkbPriceUsd } from "./price.js";
 
 const STABLECOINS = new Set(["USDT", "USDC", "DAI", "FDUSD", "TUSD", "USDE", "BUSD"]);
 
 // X Layer's native gas token is OKB. The X Layer Data API returns balance,
 // amount, and txFee as human-readable decimal strings (already in token
-// units), NOT wei — so we parse them with Number(), never BigInt().
-const TOKEN_USD_PRICE = 50; // approximate OKB/USD
+// units), NOT wei — so we parse them with Number(), never BigInt(). The OKB/USD
+// price is fetched live (see price.ts) and threaded through as a parameter.
 
 function groupByAddress(txs: OkLinkTransaction[], address: string) {
   const recipientCounts = new Map<string, number>();
@@ -34,7 +35,7 @@ function groupByAddress(txs: OkLinkTransaction[], address: string) {
     const to = tx.to?.toLowerCase() || "";
     const from = tx.from?.toLowerCase() || "";
     const addr = address.toLowerCase();
-    const ts = tx.timestamp;
+    const ts = tx.timestamp; // epoch milliseconds (X Layer transactionTime)
     const hour = new Date(ts).getUTCHours();
 
     if (ts < firstTxTimestamp) firstTxTimestamp = ts;
@@ -73,14 +74,14 @@ function groupByAddress(txs: OkLinkTransaction[], address: string) {
   };
 }
 
-function computeGasMetrics(txs: OkLinkTransaction[]) {
+function computeGasMetrics(txs: OkLinkTransaction[], priceUsd: number) {
   let totalGasToken = 0;
   for (const tx of txs) {
     const fee = Number(tx.txFee || "0");
     if (Number.isFinite(fee)) totalGasToken += fee;
   }
   const totalGasEth = totalGasToken;
-  const totalGasUsd = totalGasEth * TOKEN_USD_PRICE;
+  const totalGasUsd = totalGasEth * priceUsd;
   return { totalGasEth, totalGasUsd };
 }
 
@@ -305,12 +306,18 @@ function rarityTier(peakScore: number): string {
   return "D-Tier";
 }
 
-export async function analyzeWallet(data: FullWalletData): Promise<WalletMetrics> {
+export async function analyzeWallet(
+  data: FullWalletData,
+  // Price is injectable so tests stay hermetic; production omits it and the
+  // live OKB/USD price is fetched (see price.ts).
+  priceUsd?: number
+): Promise<WalletMetrics> {
   const { profile, transactions, holdings, tokenTransfers, nftCount, internalTxCount, crossChain } =
     data;
   const address = profile.address;
+  const okbPriceUsd = priceUsd ?? (await getOkbPriceUsd());
   const balanceEth = Number(profile.balance || "0");
-  const balanceUsd = balanceEth * TOKEN_USD_PRICE;
+  const balanceUsd = balanceEth * okbPriceUsd;
 
   const {
     recipientCounts,
@@ -325,7 +332,7 @@ export async function analyzeWallet(data: FullWalletData): Promise<WalletMetrics
   } = groupByAddress(transactions, address);
   const sym = profile.balanceSymbol || "OKB";
 
-  const { totalGasEth, totalGasUsd } = computeGasMetrics(transactions);
+  const { totalGasEth, totalGasUsd } = computeGasMetrics(transactions, okbPriceUsd);
   const uniqueProtocols = contractInteractions.size;
   const totalValue = transactions.reduce((sum, tx) => {
     const v = Number(tx.value || "0");

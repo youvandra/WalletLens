@@ -103,7 +103,7 @@ tour the slideshow with no wallet needed.
 ```jsonc
 {
   "address": "0x…",
-  "archetype": "The 2AM Degen",     // one of 10 rule-based archetypes
+  "archetype": "The 2AM Degen",     // one of 11 rule-based archetypes
   "archetypeConfidence": 0.85,      // heuristic, capped at 0.95 — never certainty
   "rarity": "S-Tier",               // rank from your own standout score
 

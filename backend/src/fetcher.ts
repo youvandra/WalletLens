@@ -19,7 +19,27 @@ export interface AddressProfile {
 }
 
 export async function fetchAddressProfile(address: string): Promise<AddressProfile> {
-  const info = await getAddressInfo(address);
+  let info;
+  try {
+    info = await getAddressInfo(address);
+  } catch (err) {
+    // X Layer answers with an empty payload for an address it has never seen.
+    // Transient throttling looks the same, but apiGet has already retried with
+    // backoff by now, so a persistent empty means the wallet is untouched.
+    // That is not an error — it profiles as "The Ghost".
+    if (err instanceof XLayerEmptyDataError) {
+      return {
+        address,
+        balance: "0",
+        balanceSymbol: "OKB",
+        transactionCount: 0,
+        firstTransactionTime: "",
+        lastTransactionTime: "",
+      };
+    }
+    throw err;
+  }
+
   return {
     address: info.address,
     balance: info.balance,

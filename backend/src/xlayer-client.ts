@@ -30,7 +30,7 @@ export class XLayerRateLimitError extends Error {
 // The upstream throttles bursts, and a single profile fans out to ~12 calls.
 // Serialize them behind a minimum gap so we never trip the limiter instead of
 // firing everything at once and retrying our way out of it.
-const MIN_GAP_MS = 120;
+const MIN_GAP_MS = 220;
 let chain: Promise<unknown> = Promise.resolve();
 
 function schedule<T>(fn: () => Promise<T>): Promise<T> {
@@ -119,7 +119,7 @@ async function apiGetOnce<T>(path: string): Promise<T> {
 
 // Retry the two throttling symptoms — an outright 429, and a 200 whose `data`
 // came back empty. A genuinely empty response stays empty after the retries.
-async function apiGet<T>(path: string, attempts = 4): Promise<T> {
+async function apiGet<T>(path: string, attempts = 5): Promise<T> {
   let lastErr: unknown;
   for (let i = 0; i < attempts; i++) {
     try {
@@ -129,7 +129,7 @@ async function apiGet<T>(path: string, attempts = 4): Promise<T> {
       const retryable =
         err instanceof XLayerEmptyDataError || err instanceof XLayerRateLimitError;
       if (!retryable || i === attempts - 1) break;
-      await sleep(400 * 2 ** i); // 400ms, 800ms, 1.6s
+      await sleep(400 * 2 ** i); // 400ms, 800ms, 1.6s, 3.2s
     }
   }
   throw lastErr;

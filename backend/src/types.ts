@@ -128,6 +128,7 @@ export type WalletArchetype =
   | "The Sleepy Whale"
   | "The Yield Farmer"
   | "The Bot"
+  | "The Ghost"
   | "The Based Chad";
 
 export interface WalletPersonality {

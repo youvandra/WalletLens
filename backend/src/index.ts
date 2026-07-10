@@ -10,7 +10,7 @@ import { buildMcpServer } from "./mcp.js";
 import { x402Gate, x402Info } from "./x402.js";
 import { renderOgPng } from "./og.js";
 import { initStats, recordWrap, recordAgentCall, getStats } from "./stats.js";
-import { XLayerEmptyDataError, XLayerRateLimitError } from "./xlayer-client.js";
+import { XLayerRateLimitError } from "./xlayer-client.js";
 import type { TxWrapRequest, TxWrapResponse, WalletMetrics } from "./types.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -181,16 +181,9 @@ app.post("/api/txwrap", async (req, res) => {
   } catch (err) {
     console.error("TxWrap error:", err);
 
-    // Upstream gave us nothing for this address — that is a 404 for the caller,
-    // not a server fault, and it deserves a sentence rather than a stack trace.
-    if (err instanceof XLayerEmptyDataError) {
-      res.status(404).json({
-        success: false,
-        error: "No X Layer activity found for this address. Try one that has transacted on X Layer.",
-      } satisfies TxWrapResponse);
-      return;
-    }
-
+    // A wallet with no history is not an error — it profiles as "The Ghost" and
+    // gets roasted like everyone else. This one means the upstream is throttling
+    // us, which is temporary and the caller's cue to retry.
     if (err instanceof XLayerRateLimitError) {
       res.status(503).json({
         success: false,

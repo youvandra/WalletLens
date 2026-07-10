@@ -36,7 +36,13 @@ Format:
 }`;
 
 function buildMetricsPrompt(metrics: WalletMetrics): string {
-  return JSON.stringify(
+  const emptyNote =
+    metrics.archetype === "The Ghost"
+      ? "\n\nNOTE: this wallet has ZERO transactions. Roast its total emptiness. " +
+        "Do not invent tokens, trades, or protocols it never touched."
+      : "";
+
+  return emptyNote + JSON.stringify(
     {
       totalTransactions: metrics.totalTx,
       tokenSymbol: metrics.tokenSymbol,
@@ -71,6 +77,22 @@ function buildMetricsPrompt(metrics: WalletMetrics): string {
 }
 
 function getFallbackPersonality(metrics: WalletMetrics): WalletPersonality {
+  // An untouched wallet has no numbers to riff on, so the generic template
+  // ("0 transactions and 0 gas") reads like a bug rather than a joke.
+  if (metrics.archetype === "The Ghost") {
+    return {
+      title: "👻 The Ghost",
+      roast:
+        "This wallet has never done anything. Not one transaction. It exists the way an unopened envelope exists.",
+      funFacts: [
+        "Zero transactions. Zero gas. Zero regrets, presumably.",
+        "It has never approved a contract, which makes it the safest wallet we have ever screened.",
+        "Technically it has a perfect record. Technically.",
+      ],
+      verdict: "A blank slate. Go make some mistakes on-chain like everyone else.",
+    };
+  }
+
   return {
     title: metrics.archetype,
     roast: `You've made ${metrics.totalTx} transactions and burned ${metrics.gasBurnedEth} ${metrics.tokenSymbol} on gas. That's certainly a choice.`,

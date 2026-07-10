@@ -213,6 +213,10 @@ function classifyArchetype(
   const nightRatio = totalTxs > 0 ? nightCount / totalTxs : 0;
   const gasRatio = balanceEth > 0 ? totalGasEth / balanceEth : 0;
 
+  // Untouched wallet. Checked first: every ratio below is 0/0 and would
+  // otherwise fall through to a label the wallet has not earned.
+  if (totalTxsRaw === 0) return "The Ghost";
+
   if (swapRatio > 0.5 && nightRatio > 0.3) return "The 2AM Degen";
   if (swapRatio < 0.05 && totalTxsRaw > 10 && balanceEth > 1) return "The Diamond HODLer";
   if (gasRatio > 0.05) return "The Gas Warrior";
@@ -238,6 +242,7 @@ function generateSarcasticTitle(
   if (totalGasEth > 0.5) return `Gas Fee Enjoyer — You've burned ${totalGasEth.toFixed(2)} ${sym} on gas`;
   if (totalTxs > 100) return `Professional Transactor`;
   if (archetype === "The Micro Duster") return `Master of 0.001 ${sym} Transactions`;
+  if (archetype === "The Ghost") return "Certified Nobody, On-Chain";
   if (archetype === "The Tourist") return "Just Here for the Vibes";
   if (archetype === "The Sleepy Whale") return "Whale Watching in Progress";
   return "Crypto Enthusiast";
@@ -385,14 +390,26 @@ export async function analyzeWallet(data: FullWalletData): Promise<WalletMetrics
   const sampleFactor = Math.min(totalTxs / 100, 1);
   const decisiveness = Math.max(defiScore, degenScore, airdropScore, whaleometer) / 100;
   const archetypeConfidence =
-    Math.round(Math.min(0.3 + 0.4 * sampleFactor + 0.3 * decisiveness, 0.95) * 100) / 100;
+    archetype === "The Ghost"
+      ? // An empty wallet is not a small sample — the upstream tx count is 0,
+        // so this is as close to certain as we ever claim.
+        0.95
+      : Math.round(Math.min(0.3 + 0.4 * sampleFactor + 0.3 * decisiveness, 0.95) * 100) / 100;
 
-  const evidence: AnalysisEvidence = {
-    analyzedTx: totalTxs,
-    totalTx: profile.transactionCount,
-    window: "most recent transactions",
-    caveat: "Derived from recent on-chain activity only, not full history.",
-  };
+  const evidence: AnalysisEvidence =
+    profile.transactionCount === 0
+      ? {
+          analyzedTx: 0,
+          totalTx: 0,
+          window: "full history",
+          caveat: "This wallet has never transacted on X Layer.",
+        }
+      : {
+          analyzedTx: totalTxs,
+          totalTx: profile.transactionCount,
+          window: "most recent transactions",
+          caveat: "Derived from recent on-chain activity only, not full history.",
+        };
 
   return {
     totalTx: profile.transactionCount,

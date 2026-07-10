@@ -302,6 +302,44 @@ These are deliberate constraints, not omissions:
 
 ---
 
+## Roadmap
+
+Shipped and planned work beyond the current MVP. Grouped by the two axes the
+product optimizes for — agent decision-value and human virality — plus the
+reliability that both depend on.
+
+### Agent intelligence
+- **Protocol & address labels** — seed [`labels.ts`](backend/src/labels.ts) with
+  verified X Layer DEX, bridge, and token contracts so `topFrenemy`, swap
+  detection, and the roast read real names instead of short hex. The mechanism
+  (registry + honest short-hex fallback) already ships; this fills it with data.
+- **`find_sybils` tool** — take 3–20 addresses and flag coordinated clusters
+  (shared counterparties, correlated timing, uniform dust). A new primitive for
+  airdrop and grant screening.
+- **Drainer / blocklist screen** — extend `screen_wallet` with unlimited-approval
+  detection and a known-malicious address list, so *"can I trust this
+  counterparty?"* gets a real answer.
+- **Wallet trajectory** — 7-day vs 30-day volume and activity trend, so an agent
+  sees direction (heating up vs. going dormant), not just a snapshot.
+
+### Reliability
+- **Per-address profile cache** ✅ *shipped* — a short-TTL in-memory cache of
+  metrics keyed by address ([`cache.ts`](backend/src/cache.ts)), so
+  `compare_wallets` and repeat calls don't re-fan-out ~12 upstream requests and
+  trip X Layer throttling. Tunable via `PROFILE_CACHE_TTL_MS`.
+
+### Virality
+- **Roast on the share card** — bake one roast line into [`og.ts`](backend/src/og.ts)
+  so a shared `/wrap/:address` link unfurls with the joke, not just the metrics.
+- **Real population percentiles** — once `/api/stats` accumulates enough wallets,
+  replace the self-referential `rarity` tier with true *"top X%"* framing (which
+  updates the *No fabricated percentiles* honesty rule honestly, on real data).
+
+Recommended order: labels → cache → `find_sybils` → drainer screen → roast card
+→ trajectory → percentiles.
+
+---
+
 ## Development
 
 ### Prerequisites
@@ -331,6 +369,7 @@ Then point an MCP client at `http://localhost:3001/mcp`, or open
 | `XLAYER_PASSPHRASE` | yes | — | OKX API passphrase |
 | `PORT` | no | `3001` | HTTP port |
 | `NODE_ENV` | no | `development` | Environment |
+| `PROFILE_CACHE_TTL_MS` | no | `120000` | Metrics cache TTL (ms); `0` disables |
 | `SUMOPOD_API_KEY` | no | — | Enables the AI roast layer; without it a deterministic fallback is used |
 | `X402_MODE` | no | `off` | `off` \| `on` — enable the payment gate |
 | `X402_PAY_TO` | when `on` | — | Address that receives settled USDT0 |
@@ -345,6 +384,7 @@ The same OKX credentials drive both the Data API and the x402 facilitator.
 npm run dev     # tsx watch
 npm run build   # tsc -> dist/
 npm start       # node dist/index.js
+npm test        # node:test suite (hermetic, no network)
 npx tsc --noEmit  # typecheck
 ```
 
@@ -360,10 +400,14 @@ backend/src/
   fetcher.ts        Parallel fetches, graceful degradation
   analyzer.ts       Metrics, archetype, signals, confidence, evidence
   labels.ts         Method-selector + address labeling
+  price.ts          Live OKB/USD price (cached, never-throw fallback)
+  cache.ts          Generic in-memory TTL cache (memoizes wallet metrics)
   personality.ts    AI roast (optional layer)
   renderer.ts       Agent markdown + slideshow HTML
   og.ts             1200x630 share card (SVG -> PNG)
+  stats.ts          Real usage counters, persisted to disk
   types.ts          Shared types
+  *.test.ts         node:test suites (analyzer, labels)
 frontend/
   index.html        Alpine.js + Tailwind SPA (no build step)
 ```

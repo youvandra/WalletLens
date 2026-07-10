@@ -15,4 +15,7 @@ export const config = {
   x402PayTo: process.env.X402_PAY_TO || "",
   x402PriceUsd: process.env.X402_PRICE_USD || "0.05",
   x402FreeDaily: parseInt(process.env.X402_FREE_DAILY || "20", 10),
+  // Metrics cache TTL (ms). A short window absorbs bursts (e.g. compare_wallets)
+  // without re-fetching a wallet's ~12 upstream calls. Set 0 to disable.
+  profileCacheTtlMs: parseInt(process.env.PROFILE_CACHE_TTL_MS || "120000", 10),
 };

@@ -4,7 +4,25 @@ import { fetchFullWalletData } from "./fetcher.js";
 import { analyzeWallet } from "./analyzer.js";
 import { generatePersonality } from "./personality.js";
 import { buildMarkdown } from "./renderer.js";
+import { TtlCache } from "./cache.js";
+import { config } from "./config.js";
 import type { WalletMetrics, WalletPersonality } from "./types.js";
+
+// Metrics are the expensive part of a profile (~12 upstream X Layer calls);
+// the roast is a cheap garnish layered on top. So we cache metrics only, keyed
+// by lowercased address, and always regenerate the roast fresh when asked.
+const metricsCache = new TtlCache<WalletMetrics>(config.profileCacheTtlMs);
+
+async function getMetrics(address: string): Promise<WalletMetrics> {
+  const key = address.toLowerCase();
+  const cached = metricsCache.get(key);
+  if (cached) return cached;
+
+  const data = await fetchFullWalletData(address);
+  const metrics = await analyzeWallet(data);
+  metricsCache.set(key, metrics);
+  return metrics;
+}
 
 export interface WalletProfileResult {
   address: string;
@@ -28,8 +46,7 @@ export async function profileWallet(
     throw new Error("Invalid address format. Must be a 0x-prefixed 42-char address.");
   }
 
-  const data = await fetchFullWalletData(address);
-  const metrics = await analyzeWallet(data);
+  const metrics = await getMetrics(address);
 
   if (opts.roast) {
     const personality = await generatePersonality(metrics);

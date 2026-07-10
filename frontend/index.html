@@ -66,6 +66,57 @@
     .spin { animation:spin .9s linear infinite; }
     @keyframes float { 0%,100%{transform:rotate(-3deg) translateY(0)} 50%{transform:rotate(-3deg) translateY(-6px)} }
     .float { animation:float 3s ease-in-out infinite; }
+
+    /* ---- landing page ---- */
+    .sec { border-bottom:5px solid var(--ink); padding:96px 24px; position:relative; overflow:hidden; }
+    .wrapx { max-width:1080px; margin:0 auto; position:relative; z-index:1; }
+    .eyebrow { display:inline-block; background:var(--ink); color:#fff; font-family:'Space Mono',monospace;
+      font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.2em; padding:7px 14px;
+      border:3px solid var(--ink); transform:rotate(-1.5deg); margin-bottom:28px; }
+    .h2 { font-family:'Archivo Black',sans-serif; letter-spacing:-.03em; line-height:.94;
+      font-size:clamp(2.2rem,6.5vw,4.4rem); margin-bottom:20px; }
+    .lede { font-size:clamp(1rem,2vw,1.25rem); font-weight:600; max-width:60ch; line-height:1.5; }
+
+    /* scroll reveal */
+    .rv { opacity:0; transform:translateY(34px) rotate(-.6deg); }
+    .rv.seen { animation:rvin .62s cubic-bezier(.2,.9,.2,1) both; }
+    @keyframes rvin { to { opacity:1; transform:none; } }
+    .rv.seen:nth-child(2){animation-delay:.06s}
+    .rv.seen:nth-child(3){animation-delay:.12s}
+    .rv.seen:nth-child(4){animation-delay:.18s}
+    .rv.seen:nth-child(5){animation-delay:.24s}
+    .rv.seen:nth-child(6){animation-delay:.30s}
+
+    /* big cta */
+    .cta { display:inline-flex; align-items:center; gap:14px; background:#FF5C00; color:#fff;
+      font-family:'Archivo Black',sans-serif; font-size:clamp(1.1rem,2.6vw,1.7rem);
+      padding:22px 40px; border:5px solid var(--ink); box-shadow:12px 12px 0 var(--ink);
+      text-decoration:none; transition:transform .08s, box-shadow .08s; }
+    .cta:hover { transform:translate(-3px,-3px); box-shadow:15px 15px 0 var(--ink); }
+    .cta:active { transform:translate(6px,6px); box-shadow:2px 2px 0 var(--ink); }
+
+    /* ticker */
+    .tick { background:var(--ink); color:#FFD400; overflow:hidden; white-space:nowrap;
+      border-top:5px solid var(--ink); border-bottom:5px solid var(--ink); }
+    .tick span { display:inline-block; padding:14px 0; font-family:'Archivo Black',sans-serif;
+      font-size:20px; letter-spacing:.06em; animation:scroll 22s linear infinite; }
+
+    /* signal chip grid */
+    .sig { border:3px solid var(--ink); background:#fff; box-shadow:5px 5px 0 var(--ink);
+      padding:14px 16px; transition:transform .1s; }
+    .sig:hover { transform:translate(-2px,-2px) rotate(-1deg); box-shadow:8px 8px 0 var(--ink); }
+    .sig code { font-family:'Space Mono',monospace; font-weight:700; font-size:13px; }
+
+    /* code block */
+    .codeblk { background:var(--ink); color:#C6FF00; border:4px solid var(--ink);
+      box-shadow:9px 9px 0 rgba(0,0,0,.25); font-family:'Space Mono',monospace; font-size:12.5px;
+      line-height:1.65; padding:22px; overflow-x:auto; white-space:pre; }
+    .codeblk .k { color:#FF2D8B; } .codeblk .s { color:#FFD400; } .codeblk .c { color:#8a8a8a; }
+
+    /* step rail */
+    .step { display:flex; gap:20px; align-items:flex-start; }
+    .step .n { font-family:'Archivo Black',sans-serif; font-size:2.4rem; line-height:1;
+      -webkit-text-stroke:2px var(--ink); color:transparent; flex-shrink:0; width:64px; }
   </style>
 </head>
 <body>
@@ -81,22 +132,183 @@
 
     <!-- ===== LANDING ===== -->
     <template x-if="!loading && !wrapped">
-      <div class="min-h-screen flex flex-col items-center justify-center gap-8 px-4 py-16">
-        <div class="badge float text-sm">Spotify Wrapped, but for your wallet</div>
-        <h1 class="display text-center" style="font-size:clamp(3.5rem,16vw,9rem)">TX<span style="color:#FF2D8B">WRAP</span></h1>
-        <p class="mono uppercase tracking-[3px] text-sm font-bold -mt-4">Your Wallet, Wrapped.</p>
+      <div x-init="initReveal()">
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl w-full mt-2">
-          <div class="card p-4 -rotate-1"><p class="mono text-[11px] uppercase tracking-widest font-bold text-[#FF2D8B] mb-1">Archetype</p><p class="text-sm font-extrabold">AI wallet personality &amp; roast</p></div>
-          <div class="card p-4 rotate-1"><p class="mono text-[11px] uppercase tracking-widest font-bold text-[#2B4BFF] mb-1">Scores</p><p class="text-sm font-extrabold">DeFi, Airdrop, Degen &amp; more</p></div>
-          <div class="card p-4 -rotate-1"><p class="mono text-[11px] uppercase tracking-widest font-bold text-[#00A676] mb-1">Share</p><p class="text-sm font-extrabold">Save as image or share on X</p></div>
+        <!-- 1 · HERO -->
+        <section class="sec" style="background:#FFD400;padding-top:72px">
+          <div class="deco deco-0"></div>
+          <div class="wrapx flex flex-col items-center text-center">
+            <div class="badge float text-sm rv">On-chain wallet intelligence for agents</div>
+            <h1 class="display rv" style="font-size:clamp(3.5rem,16vw,10rem);margin:10px 0">TX<span style="color:#FF2D8B">WRAP</span></h1>
+            <p class="lede rv" style="margin-bottom:34px">
+              Your agent keeps hitting addresses it knows nothing about.
+              TxWrap answers <em>“who is this wallet, and should I act on it?”</em>
+              — as structured data it can compose, not a webpage it has to scrape.
+            </p>
+            <a href="https://www.okx.ai/agents/4938" target="_blank" rel="noopener" class="cta rv">
+              Try TxWrap on OKX.AI <span>→</span>
+            </a>
+            <button @click="loadSample()" class="rv mono text-xs uppercase tracking-widest font-bold underline underline-offset-4 hover:text-[#FF2D8B]" style="margin-top:22px">
+              or peek at a sample wrap
+            </button>
+            <div class="rv mono text-[11px] uppercase tracking-widest font-bold opacity-60" style="margin-top:14px">
+              Agent&nbsp;ID&nbsp;#4938 · X&nbsp;Layer · 0.05 USDT0 per call
+            </div>
+          </div>
+        </section>
+
+        <!-- ticker -->
+        <div class="tick">
+          <span>SCREEN COUNTERPARTIES · DETECT SYBILS · RANK WALLETS · PROFILE ANY ADDRESS · SCREEN COUNTERPARTIES · DETECT SYBILS · RANK WALLETS · PROFILE ANY ADDRESS · </span><span>SCREEN COUNTERPARTIES · DETECT SYBILS · RANK WALLETS · PROFILE ANY ADDRESS · SCREEN COUNTERPARTIES · DETECT SYBILS · RANK WALLETS · PROFILE ANY ADDRESS · </span>
         </div>
 
-        <div class="flex w-full max-w-[560px] frame bg-white mt-2">
-          <input type="text" x-model="address" @keydown.enter="wrap()" placeholder="0x..." class="flex-1 px-5 py-5 border-none outline-none text-base mono bg-white text-[var(--ink)]">
-          <button @click="wrap()" class="px-8 py-5 bg-[#FF5C00] text-white display text-lg border-l-[5px] border-[var(--ink)] hover:bg-[#e85218] active:translate-x-[2px]">WRAP</button>
-        </div>
-        <button @click="loadSample()" class="mono text-xs uppercase tracking-widest font-bold underline underline-offset-4 hover:text-[#FF2D8B]">or see a sample wrap →</button>
+        <!-- 2 · PROBLEM -->
+        <section class="sec" style="background:#FF2D8B">
+          <div class="deco deco-1"></div>
+          <div class="wrapx">
+            <div class="eyebrow rv">The problem</div>
+            <h2 class="h2 rv">AN ADDRESS IS<br>JUST 42 CHARACTERS.</h2>
+            <p class="lede rv" style="margin-bottom:36px">
+              An autonomous agent about to send funds, drop an airdrop, or trust a counterparty
+              sees <code class="mono">0x8f3a…7f80</code> and nothing else. Block explorers are built
+              for humans with eyes. Agents need a verdict they can justify.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="card rv p-5 -rotate-1"><p class="display text-2xl mb-1">Is it a bot?</p><p class="text-sm font-bold opacity-70">Timing regularity, volume, night-hour skew.</p></div>
+              <div class="card rv p-5 rotate-1"><p class="display text-2xl mb-1">Is it farming?</p><p class="text-sm font-bold opacity-70">Dust patterns, approval spam, wallet age.</p></div>
+              <div class="card rv p-5 -rotate-1"><p class="display text-2xl mb-1">Is it real?</p><p class="text-sm font-bold opacity-70">Portfolio, net worth, cross-chain history.</p></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3 · WHAT YOU GET -->
+        <section class="sec" style="background:#2B4BFF;color:#fff">
+          <div class="deco deco-6 inkw"></div>
+          <div class="wrapx">
+            <div class="eyebrow rv" style="background:#fff;color:var(--ink)">What comes back</div>
+            <h2 class="h2 rv">13 SIGNALS.<br>ONE VERDICT.<br>ALWAYS WITH EVIDENCE.</h2>
+            <p class="lede rv" style="margin-bottom:40px">
+              Every result carries <code class="mono">archetypeConfidence</code> and an
+              <code class="mono">evidence</code> block — how many transactions were analyzed,
+              the window, and an explicit caveat. Never a black box.
+            </p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <template x-for="s in signalList" :key="s">
+                <div class="sig rv text-[#0a0a0a]"><code x-text="s"></code></div>
+              </template>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4 · TOOLS -->
+        <section class="sec" style="background:#C6FF00">
+          <div class="deco deco-8"></div>
+          <div class="wrapx">
+            <div class="eyebrow rv">Four MCP tools</div>
+            <h2 class="h2 rv">CALL IT LIKE<br>ANY OTHER TOOL.</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" style="margin-top:36px">
+              <template x-for="t in tools" :key="t.name">
+                <div class="card rv p-6" :class="t.tilt">
+                  <p class="mono text-sm font-bold" :style="`color:${t.hex}`" x-text="t.name + '()'"></p>
+                  <p class="display text-xl mt-1 mb-2" x-text="t.title"></p>
+                  <p class="text-sm font-bold opacity-70 leading-snug" x-text="t.desc"></p>
+                </div>
+              </template>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5 · PRICING -->
+        <section class="sec" style="background:#FF5C00">
+          <div class="deco deco-4"></div>
+          <div class="wrapx">
+            <div class="eyebrow rv">Pay per call · x402 v2</div>
+            <h2 class="h2 rv">0.05 USDT0.<br>NO KEY. NO GAS.</h2>
+            <p class="lede rv" style="margin-bottom:32px">
+              Discovery is free forever — <code class="mono">initialize</code> and
+              <code class="mono">tools/list</code> never cost a cent. Each IP gets 20 free calls a day.
+              Past that, the server answers <strong>HTTP&nbsp;402</strong> and the OKX facilitator
+              settles the transfer on-chain. This server never touches a private key.
+            </p>
+            <div class="codeblk rv"><span class="c">// decoded PAYMENT-REQUIRED header</span>
+{
+  <span class="k">"x402Version"</span>: 2,
+  <span class="k">"accepts"</span>: [{
+    <span class="k">"scheme"</span>:  <span class="s">"exact"</span>,
+    <span class="k">"network"</span>: <span class="s">"eip155:196"</span>,     <span class="c">// X Layer</span>
+    <span class="k">"amount"</span>:  <span class="s">"50000"</span>,          <span class="c">// 0.05 USDT0</span>
+    <span class="k">"asset"</span>:   <span class="s">"0x779ded0c…3736"</span>
+  }]
+}</div>
+          </div>
+        </section>
+
+        <!-- 6 · HOW IT WORKS -->
+        <section class="sec" style="background:#8B3DFF;color:#fff">
+          <div class="deco deco-3 inkw"></div>
+          <div class="wrapx">
+            <div class="eyebrow rv" style="background:#fff;color:var(--ink)">Under the hood</div>
+            <h2 class="h2 rv">SEVEN FETCHES.<br>ZERO GUESSES.</h2>
+            <div class="flex flex-col gap-7" style="margin-top:40px">
+              <template x-for="(st,i) in steps" :key="i">
+                <div class="step rv">
+                  <div class="n" style="-webkit-text-stroke:2px #fff" x-text="'0'+(i+1)"></div>
+                  <div>
+                    <p class="display text-2xl mb-1" x-text="st.t"></p>
+                    <p class="text-sm font-bold opacity-80 leading-relaxed max-w-[62ch]" x-text="st.d"></p>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </section>
+
+        <!-- 7 · HONESTY -->
+        <section class="sec" style="background:#12E4B6">
+          <div class="deco deco-2"></div>
+          <div class="wrapx">
+            <div class="eyebrow rv">Things we refuse to do</div>
+            <h2 class="h2 rv">AGENTS ACT ON THIS.<br>SO WE DON'T LIE.</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" style="margin-top:32px">
+              <template x-for="h in honesty" :key="h.t">
+                <div class="card rv p-5">
+                  <p class="display text-lg mb-1" x-text="h.t"></p>
+                  <p class="text-sm font-bold opacity-70 leading-snug" x-text="h.d"></p>
+                </div>
+              </template>
+            </div>
+          </div>
+        </section>
+
+        <!-- 8 · HUMAN LAYER -->
+        <section class="sec" style="background:#EDE7DB">
+          <div class="deco deco-7"></div>
+          <div class="wrapx text-center">
+            <div class="eyebrow rv">Bonus layer</div>
+            <h2 class="h2 rv">AND YES —<br>IT ROASTS YOU.</h2>
+            <p class="lede rv" style="margin:0 auto 32px">
+              Ask for <code class="mono">roast: true</code> and the agent gets a shareable “Wrapped”
+              slideshow to hand back to its human. Archetype, scores, portfolio, and a verdict
+              nobody asked for.
+            </p>
+            <button @click="loadSample()" class="rv btn px-7 py-4 bg-white text-sm">See a sample wrap</button>
+          </div>
+        </section>
+
+        <!-- 9 · FINAL CTA -->
+        <section class="sec" style="background:#FFD400;border-bottom:none">
+          <div class="deco deco-0"></div>
+          <div class="wrapx flex flex-col items-center text-center">
+            <h2 class="h2 rv" style="font-size:clamp(2.4rem,8vw,5.5rem)">GIVE YOUR AGENT<br>A SECOND OPINION.</h2>
+            <a href="https://www.okx.ai/agents/4938" target="_blank" rel="noopener" class="cta rv" style="margin-top:20px">
+              Try TxWrap on OKX.AI <span>→</span>
+            </a>
+            <div class="rv mono text-[11px] uppercase tracking-widest font-bold opacity-60" style="margin-top:26px">
+              MCP endpoint · txwrap.my.id/mcp
+            </div>
+          </div>
+        </section>
+
       </div>
     </template>
 
@@ -290,6 +502,48 @@
           { bg:'#F3EDE2', ink:'#0a0a0a' }, // verdict
           { bg:'#FFD400', ink:'#0a0a0a' }, // summary
         ],
+
+        // ---- landing page content ----
+        signalList: [
+          'nightOwl', 'approvalHeavy', 'likelyBot', 'dustPattern',
+          'highSwapActivity', 'newWallet', 'dormant', 'whale',
+          'diversifiedPortfolio', 'stablecoinHeavy', 'crossChainUser',
+          'nftCollector', 'contractHeavy',
+        ],
+        tools: [
+          { name: 'profile_wallet', title: 'The full picture', hex: '#2B4BFF', tilt: '-rotate-1',
+            desc: 'Archetype with confidence, activity breakdown, token portfolio, net worth, scores, signals, top counterparty, evidence.' },
+          { name: 'screen_wallet', title: 'Risk, fast', hex: '#FF2D8B', tilt: 'rotate-1',
+            desc: 'Coarse risk level plus the flags behind it: bot-like, dust-farming, approval-heavy, dormant, brand new.' },
+          { name: 'compare_wallets', title: 'Rank a shortlist', hex: '#00A676', tilt: 'rotate-1',
+            desc: 'Two to five addresses, side by side. Pick the safest counterparty or spot the farmer in the set.' },
+          { name: 'classify_wallet', title: 'Cheap check', hex: '#C68A00', tilt: '-rotate-1',
+            desc: 'Just the archetype, confidence, rarity tier and active signals. For when you do not need the whole profile.' },
+        ],
+        steps: [
+          { t: 'Fetch, in parallel', d: 'Seven X Layer Data API endpoints at once: balances, native transactions, ERC-20 holdings, NFT count, token transfer flows, internal contract calls, and cross-chain hops. Any supplementary endpoint may fail without taking the profile down.' },
+          { t: 'Classify every transaction', d: 'The 4-byte method selector is chain-agnostic, so each transaction resolves to swap, approve, transfer, native send, or other contract call. No guessing.' },
+          { t: 'Score, deterministically', d: 'The metrics engine is pure math. Archetype, scores, and all 13 signals fall out of thresholds you can read in the source.' },
+          { t: 'Attach the evidence', d: 'Confidence scales with sample size and how decisively the wallet cleared a threshold — capped below certainty, because a recent-activity window can never prove one.' },
+          { t: 'Roast, optionally', d: 'The AI layer only writes the human summary. It never touches a number.' },
+        ],
+        honesty: [
+          { t: 'No fabricated percentiles', d: 'We do not have the X Layer population distribution, so rarity is an honest tier from your own standout score — never "top X% of all wallets".' },
+          { t: 'Confidence is capped at 0.95', d: 'A recent-activity window cannot justify certainty, so we never claim it.' },
+          { t: 'No guessed protocol names', d: 'Unknown addresses render as clean short hex instead of a plausible-looking lie.' },
+          { t: 'The fee matches reality', d: 'A paid endpoint must actually settle. We charge 0.05 because x402 settlement genuinely works.' },
+        ],
+
+        initReveal() {
+          this.$nextTick(() => {
+            const io = new IntersectionObserver((entries) => {
+              entries.forEach(e => {
+                if (e.isIntersecting) { e.target.classList.add('seen'); io.unobserve(e.target); }
+              });
+            }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+            document.querySelectorAll('.rv').forEach(el => io.observe(el));
+          });
+        },
 
         init() {
           this.$watch('slide', v => this.enter(v));

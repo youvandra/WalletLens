@@ -93,7 +93,7 @@ tour the slideshow with no wallet needed.
 |------|-------|---------|
 | `profile_wallet` | `address`, `roast?` | Full profile: archetype (+confidence), activity breakdown, portfolio, scores, signals, top counterparty, evidence. With `roast: true`, adds a human summary + slideshow URL. |
 | `classify_wallet` | `address` | Cheap check: archetype, confidence, rarity tier, active signals, evidence. |
-| `screen_wallet` | `address` | Risk screen: coarse risk level, risk flags, all 13 signals, evidence. |
+| `screen_wallet` | `address` | Risk screen: coarse risk level, risk flags, all 13 signals, a blocklist check (self + counterparties), evidence. |
 | `compare_wallets` | `addresses[2..5]` | Side-by-side profiles, scores, and signals for ranking. |
 | `find_sybils` | `addresses[3..20]` | Coordination screen: clusters wallets by shared counterparties, shared funder, and correlated timing, with a per-pair score. |
 
@@ -159,6 +159,14 @@ Thirteen boolean flags, each derived only from what X Layer actually exposes:
 `screen_wallet` promotes `likelyBot`, `dustPattern`, `approvalHeavy`,
 `newWallet`, and `dormant` into `riskFlags`, then maps the count onto a coarse
 `risk` level (`low` / `medium` / `high`).
+
+It also runs a **blocklist check** against a registry of known-malicious
+addresses ([`blocklist.ts`](backend/src/blocklist.ts), seeded with verified
+entries only, extendable via `BLOCKLIST_ADDRESSES`). A direct hit on the screened
+address adds the `blocklisted` flag and forces `risk: high`; a hit on any
+counterparty adds `interactedWithBlocklisted`. Both are reported under a
+`blocklist` object. Detecting an unlimited-approval *amount* is out of scope for
+now — it needs decoded call data the tx-list endpoint doesn't return.
 
 ---
 
@@ -320,9 +328,11 @@ reliability that both depend on.
   shared funding source, and correlated activity timing (cosine), grouped via
   union-find with a per-pair coordination score. A primitive for airdrop and
   grant screening.
-- **Drainer / blocklist screen** — extend `screen_wallet` with unlimited-approval
-  detection and a known-malicious address list, so *"can I trust this
-  counterparty?"* gets a real answer.
+- **Drainer / blocklist screen** ✅ *shipped (blocklist)* — `screen_wallet` now
+  checks the address and its counterparties against a known-malicious registry
+  ([`blocklist.ts`](backend/src/blocklist.ts), extendable via
+  `BLOCKLIST_ADDRESSES`). Unlimited-approval *amount* detection remains future
+  work (needs decoded call data the tx-list endpoint doesn't return).
 - **Wallet trajectory** — 7-day vs 30-day volume and activity trend, so an agent
   sees direction (heating up vs. going dormant), not just a snapshot.
 
@@ -374,6 +384,7 @@ Then point an MCP client at `http://localhost:3001/mcp`, or open
 | `PORT` | no | `3001` | HTTP port |
 | `NODE_ENV` | no | `development` | Environment |
 | `PROFILE_CACHE_TTL_MS` | no | `120000` | Metrics cache TTL (ms); `0` disables |
+| `BLOCKLIST_ADDRESSES` | no | — | Extra known-malicious addresses for `screen_wallet`, comma-separated |
 | `SUMOPOD_API_KEY` | no | — | Enables the AI roast layer; without it a deterministic fallback is used |
 | `X402_MODE` | no | `off` | `off` \| `on` — enable the payment gate |
 | `X402_PAY_TO` | when `on` | — | Address that receives settled USDT0 |
@@ -400,6 +411,7 @@ backend/src/
   service.ts        Shared pipeline: fetch -> analyze -> (roast)
   mcp.ts            MCP server, five agent tools
   sybil.ts          Coordination / sybil detection (pure, used by find_sybils)
+  blocklist.ts      Known-malicious address registry (screen_wallet)
   x402.ts           Payment gate (freemium + HTTP 402)
   xlayer-client.ts  X Layer Data API, HMAC-SHA256 auth
   fetcher.ts        Parallel fetches, graceful degradation

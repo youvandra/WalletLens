@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { profileWallet, getSybilFeatures } from "./service.js";
 import { analyzeSybils } from "./sybil.js";
+import { isBlocklisted, findBlocklisted } from "./blocklist.js";
 import type { WalletMetrics } from "./types.js";
 
 const ADDRESS = z
@@ -78,14 +79,36 @@ export function buildMcpServer(): McpServer {
       inputSchema: { address: ADDRESS },
     },
     async ({ address }) => {
-      const { metrics } = await profileWallet(address);
+      const [{ metrics }, features] = await Promise.all([
+        profileWallet(address),
+        getSybilFeatures(address),
+      ]);
       const flags = activeSignals(metrics);
       const riskFlags = flags.filter((f) => RISK_FLAGS.includes(f));
-      const risk = riskFlags.length >= 3 ? "high" : riskFlags.length >= 1 ? "medium" : "low";
+
+      // Blocklist screen: is the address itself flagged, or has it transacted
+      // with a flagged counterparty? A direct hit is decisive.
+      const selfBlocklisted = isBlocklisted(address);
+      const flaggedCounterparties = findBlocklisted(features.counterparties);
+      if (selfBlocklisted) riskFlags.push("blocklisted");
+      if (flaggedCounterparties.length > 0) riskFlags.push("interactedWithBlocklisted");
+
+      const risk = selfBlocklisted
+        ? "high"
+        : riskFlags.length >= 3
+          ? "high"
+          : riskFlags.length >= 1
+            ? "medium"
+            : "low";
+
       return json({
         address,
         risk,
         riskFlags,
+        blocklist: {
+          selfBlocklisted,
+          flaggedCounterparties,
+        },
         signals: metrics.signals,
         confidence: metrics.archetypeConfidence,
         evidence: metrics.evidence,

@@ -18,4 +18,10 @@ export const config = {
   // Metrics cache TTL (ms). A short window absorbs bursts (e.g. compare_wallets)
   // without re-fetching a wallet's ~12 upstream calls. Set 0 to disable.
   profileCacheTtlMs: parseInt(process.env.PROFILE_CACHE_TTL_MS || "120000", 10),
+  // Extra known-malicious addresses for the risk screen (see blocklist.ts),
+  // comma-separated. Merged with the verified in-code seed at startup.
+  blocklistAddresses: (process.env.BLOCKLIST_ADDRESSES || "")
+    .split(",")
+    .map((a) => a.trim())
+    .filter(Boolean),
 };

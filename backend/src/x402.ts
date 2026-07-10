@@ -13,7 +13,10 @@
 import type { Request, Response, NextFunction } from "express";
 import { config } from "./config.js";
 
-// USDT on X Layer (see OKX X Layer Data API docs examples).
+// USDT on X Layer. Verified on-chain: name() = "Tether USD", decimals() = 6.
+// It exposes EIP-2612 `permit` but NOT EIP-3009 `transferWithAuthorization`,
+// so the `exact` scheme must run over Permit2 — advertised to the payer via
+// extra.assetTransferMethod. Signing an EIP-3009 authorization would fail.
 const USDT_XLAYER = "0x1e4a5963abfd975d8c9021ce480b42188849d41d";
 const USDT_DECIMALS = 6;
 
@@ -27,7 +30,32 @@ interface PaymentRequirements {
   payTo: string;
   maxTimeoutSeconds: number;
   asset: string;
-  extra: { name: string; decimals: number };
+  extra: {
+    name: string;
+    decimals: number;
+    assetTransferMethod: "permit2";
+  };
+}
+
+// The payer signs one of two wire shapes. Permit2 is what we advertise for
+// USDT on X Layer; the EIP-3009 shape is still accepted so the gate keeps
+// working if the asset is ever swapped for a token that supports it.
+interface Eip3009Authorization {
+  from: string;
+  to: string;
+  value: string;
+  validAfter: string;
+  validBefore: string;
+  nonce: string;
+}
+
+interface Permit2Authorization {
+  from: string;
+  permitted: { token: string; amount: string };
+  spender: string;
+  nonce: string;
+  deadline: string;
+  witness: { to: string; validAfter: string };
 }
 
 interface PaymentPayload {
@@ -36,15 +64,34 @@ interface PaymentPayload {
   network: string;
   payload: {
     signature: string;
-    authorization: {
-      from: string;
-      to: string;
-      value: string;
-      validAfter: string;
-      validBefore: string;
-      nonce: string;
-    };
+    authorization?: Eip3009Authorization;
+    permit2Authorization?: Permit2Authorization;
   };
+}
+
+// Normalize either wire shape into { payer, recipient, amount, expiresAt }.
+function normalize(
+  p: PaymentPayload
+): { payer: string; recipient: string; amount: string; expiresAt: number } | null {
+  const perm = p.payload?.permit2Authorization;
+  if (perm) {
+    return {
+      payer: perm.from,
+      recipient: perm.witness?.to,
+      amount: perm.permitted?.amount,
+      expiresAt: Number(perm.deadline),
+    };
+  }
+  const auth = p.payload?.authorization;
+  if (auth) {
+    return {
+      payer: auth.from,
+      recipient: auth.to,
+      amount: auth.value,
+      expiresAt: Number(auth.validBefore),
+    };
+  }
+  return null;
 }
 
 function priceAtomic(): bigint {
@@ -63,7 +110,11 @@ export function paymentRequirements(resource: string): PaymentRequirements {
     payTo: config.x402PayTo || "0x0000000000000000000000000000000000000000",
     maxTimeoutSeconds: 60,
     asset: USDT_XLAYER,
-    extra: { name: "USDT", decimals: USDT_DECIMALS },
+    extra: {
+      name: "Tether USD", // EIP-712 domain name, read from the contract
+      decimals: USDT_DECIMALS,
+      assetTransferMethod: "permit2",
+    },
   };
 }
 
@@ -113,22 +164,22 @@ function verifyStructurally(
 ): { ok: boolean; reason?: string } {
   if (payment.scheme !== "exact") return { ok: false, reason: "unsupported scheme" };
   if (payment.network !== requirements.network) return { ok: false, reason: "wrong network" };
-  const auth = payment.payload?.authorization;
-  if (!auth || !payment.payload?.signature) return { ok: false, reason: "missing authorization" };
+  if (!payment.payload?.signature) return { ok: false, reason: "missing signature" };
+
+  const auth = normalize(payment);
+  if (!auth) return { ok: false, reason: "missing authorization" };
+
   try {
-    if (BigInt(auth.value) < BigInt(requirements.maxAmountRequired)) {
+    if (BigInt(auth.amount) < BigInt(requirements.maxAmountRequired)) {
       return { ok: false, reason: "insufficient amount" };
     }
   } catch {
-    return { ok: false, reason: "malformed value" };
+    return { ok: false, reason: "malformed amount" };
   }
-  if (
-    config.x402PayTo &&
-    auth.to?.toLowerCase() !== config.x402PayTo.toLowerCase()
-  ) {
+  if (config.x402PayTo && auth.recipient?.toLowerCase() !== config.x402PayTo.toLowerCase()) {
     return { ok: false, reason: "wrong payTo" };
   }
-  if (Number(auth.validBefore) * 1000 < Date.now()) {
+  if (auth.expiresAt * 1000 < Date.now()) {
     return { ok: false, reason: "authorization expired" };
   }
   return { ok: true };
@@ -183,7 +234,7 @@ export async function x402Gate(req: Request, res: Response, next: NextFunction):
   }
 
   console.log(
-    `x402 payment accepted (${config.x402Mode}) from ${payment.payload.authorization.from} for ${resource}`
+    `x402 payment accepted (${config.x402Mode}) from ${normalize(payment)?.payer} for ${resource}`
   );
   res.setHeader(
     "X-PAYMENT-RESPONSE",
@@ -206,9 +257,14 @@ export function x402Info(): Record<string, unknown> {
     pricing: {
       perToolCall: `${config.x402PriceUsd} USDT`,
       asset: USDT_XLAYER,
+      assetTransferMethod: "permit2",
       network: "xlayer",
       freeDailyCallsPerIp: config.x402FreeDaily,
     },
+    settlement:
+      config.x402Mode === "facilitator"
+        ? "on-chain via facilitator"
+        : "not settled — demo mode verifies the payment payload but does not move funds",
     metered: ["tools/call on POST /mcp"],
     free: ["initialize", "tools/list", "GET /wrap/:address", "POST /api/txwrap (human tier)"],
   };

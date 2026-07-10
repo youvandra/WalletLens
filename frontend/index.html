@@ -371,6 +371,7 @@
               <div class="flex items-center gap-3 flex-wrap mb-6">
                 <div class="badge pop text-xs">Your Wallet Archetype</div>
                 <div class="badge pop text-xs" style="background:#fff;color:var(--ink);transform:rotate(3deg)" x-text="data.metrics.rarity + ' Rank'"></div>
+                <div class="badge pop text-xs" x-show="data.metrics.percentile" style="background:#0a0a0a;color:#fff;transform:rotate(-2deg)" x-text="'Top ' + (data.metrics.percentile?.topPercent ?? '') + '%'"></div>
               </div>
               <h2 class="display pop mb-6" style="font-size:clamp(2.4rem,10vw,4.2rem)" x-text="data.personality.title"></h2>
               <div class="card pop p-5 text-lg font-bold leading-snug" x-text="data.personality.roast"></div>
@@ -451,7 +452,23 @@
                 <div class="card pop p-4"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Cross-chain</p><p class="display" style="font-size:clamp(1.5rem,5.5vw,2rem);color:#FF2D8B"><span x-text="data.metrics.crossChain?.total ?? 0"></span><span class="text-base"> hops</span></p></div>
                 <div class="card pop p-4"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Contract Calls</p><p class="display" style="font-size:clamp(1.5rem,5.5vw,2rem);color:#C68A00" x-text="data.metrics.internalTxCount ?? 0"></p></div>
               </div>
-              <div class="card pop p-4"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Top Frenemy</p><p class="display text-lg" x-text="data.metrics.topFrenemyLabel"></p><p class="mono text-xs break-all opacity-60 mt-1" x-text="data.metrics.topFrenemy"></p></div>
+              <div class="card pop p-4 mb-3" x-show="momentum">
+                <p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Momentum</p>
+                <div class="flex items-baseline justify-between gap-2 flex-wrap">
+                  <p class="display" style="font-size:clamp(1.3rem,5vw,1.8rem)"><span x-text="momentum?.icon"></span> <span class="capitalize" x-text="momentum?.momentum"></span></p>
+                  <p class="mono text-xs opacity-70"><span x-text="momentum?.tx7d"></span> txs 7d · <span x-text="momentum?.tx30d"></span> txs 30d</p>
+                </div>
+              </div>
+              <div class="card pop p-4" x-show="topCps.length">
+                <p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-2">Top Counterparties</p>
+                <template x-for="(c,i) in topCps" :key="c.address">
+                  <div class="flex items-center justify-between gap-2 py-1" :class="i>0 && 'border-t-2 border-[var(--ink)] border-opacity-20'">
+                    <span class="display text-base" x-text="c.label"></span>
+                    <span class="mono text-[10px] opacity-60" x-text="c.txCount + ' tx'"></span>
+                  </div>
+                </template>
+              </div>
+              <div class="card pop p-4" x-show="!topCps.length"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Top Frenemy</p><p class="display text-lg" x-text="data.metrics.topFrenemyLabel"></p><p class="mono text-xs break-all opacity-60 mt-1" x-text="data.metrics.topFrenemy"></p></div>
             </div>
 
             <!-- 7: VERDICT -->
@@ -466,7 +483,8 @@
             <!-- 8: SUMMARY -->
             <div x-show="slide===8" class="reveal" :class="slide===8&&'run'">
               <div class="badge pop text-xs mb-5">In Summary</div>
-              <p class="display pop mb-4" style="font-size:clamp(1.5rem,6vw,2.2rem)" x-text="data.metrics.sarcasticTitle"></p>
+              <p class="display pop mb-2" style="font-size:clamp(1.5rem,6vw,2.2rem)" x-text="data.metrics.sarcasticTitle"></p>
+              <p class="pop mono text-[11px] uppercase tracking-widest font-bold opacity-70 mb-4" x-show="data.metrics.percentile" x-text="'Top ' + (data.metrics.percentile?.topPercent ?? '') + '% of ' + (data.metrics.percentile?.sampleSize ?? '') + ' wrapped wallets'"></p>
               <div class="grid grid-cols-4 gap-2 mb-4">
                 <template x-for="s in scoreData" :key="s.label">
                   <div class="card pop p-2 text-center"><p class="mono text-[9px] uppercase font-bold opacity-60" x-text="s.label"></p><p class="display text-xl" :style="`color:${s.hex}`" x-text="s.value"></p></div>
@@ -582,7 +600,7 @@
           { t: 'Roast, optionally', d: 'The AI layer only writes the human summary. It never touches a number.' },
         ],
         honesty: [
-          { t: 'No fabricated percentiles', d: 'We do not have the X Layer population distribution, so rarity is an honest tier from your own standout score — never "top X% of all wallets".' },
+          { t: 'No fabricated percentiles', d: 'A "top X%" only appears once enough wallets have been profiled to mean it, and it is measured against wallets TxWrap has profiled — never claimed against all of X Layer.' },
           { t: 'Confidence is capped at 0.95', d: 'A recent-activity window cannot justify certainty, so we never claim it.' },
           { t: 'No guessed protocol names', d: 'Unknown addresses render as clean short hex instead of a plausible-looking lie.' },
           { t: 'The fee matches reality', d: 'A paid endpoint must actually settle. We charge 0.05 because x402 settlement genuinely works.' },
@@ -627,6 +645,14 @@
 
         get pf() { return this.data.metrics?.portfolio || {}; },
         get bag() { return (this.pf.topHoldings || []).slice(0, 5); },
+
+        get momentum() {
+          const t = this.data.metrics?.trajectory;
+          if (!t) return null;
+          const icon = { heating: '🔥', cooling: '🧊', steady: '➡️', dormant: '💤' }[t.momentum] || '';
+          return { ...t, icon };
+        },
+        get topCps() { return (this.data.metrics?.topCounterparties || []).slice(0, 3); },
 
         get signalChips() {
           const s = this.data.metrics?.signals;
@@ -734,6 +760,13 @@
               airdropScore: 82, degenScore: 91, diamondHandsDays: 14, whaleometer: 67,
               uniqueProtocols: 19, topFrenemy: '0x8f3a9c2b1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f80',
               topFrenemyLabel: '0x8f3a…7f80', rarity: 'S-Tier',
+              trajectory: { tx7d: 31, tx30d: 96, prev7d: 14, momentum: 'heating' },
+              percentile: { standoutScore: 91, topPercent: 4, sampleSize: 512, basis: 'wallets profiled by TxWrap' },
+              topCounterparties: [
+                { address: '0x779ded0c9e1022225f8e0630b35a9b54be713736', label: 'USDT0', txCount: 41 },
+                { address: '0xe538905cf8410324e03a5a23c1c177a474d59b2b', label: 'WOKB', txCount: 27 },
+                { address: '0x8f3a9c2b1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f80', label: '0x8f3a…7f80', txCount: 23 },
+              ],
               signals: { nightOwl: true, likelyBot: false, approvalHeavy: true, highSwapActivity: true, diversifiedPortfolio: true, crossChainUser: true, nftCollector: true },
               peakHour: 2, activityStreak: 23, archetype: 'The 2AM Degen',
               sarcasticTitle: 'Serial Approver',

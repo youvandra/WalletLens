@@ -10,13 +10,34 @@ interface StatsFile {
   wraps: number;
   agentCalls: number;
   wallets: string[];
+  scores: number[];
 }
+
+// Below this many samples a percentile would be noise, so we withhold it rather
+// than fabricate one. Sample is capped so the file and the math stay bounded.
+const MIN_PERCENTILE_SAMPLE = 30;
+const MAX_SCORE_SAMPLES = 5000;
 
 let file = "";
 let wraps = 0;
 let agentCalls = 0;
 let wallets = new Set<string>();
+let scores: number[] = [];
 let dirty = false;
+
+// Pure: what top-percent a value lands in, or null below the sample floor.
+// "Top X%" = the share of samples that score strictly higher, rounded up and
+// floored at 1 (we never claim "top 0%").
+export function computePercentile(
+  value: number,
+  sample: number[],
+  minSample = MIN_PERCENTILE_SAMPLE
+): { topPercent: number; sampleSize: number } | null {
+  if (sample.length < minSample) return null;
+  const higher = sample.reduce((n, s) => (s > value ? n + 1 : n), 0);
+  const topPercent = Math.max(1, Math.round((higher / sample.length) * 100));
+  return { topPercent, sampleSize: sample.length };
+}
 
 export function initStats(dataDir: string): void {
   file = path.join(dataDir, "stats.json");
@@ -27,6 +48,7 @@ export function initStats(dataDir: string): void {
       wraps = parsed.wraps ?? 0;
       agentCalls = parsed.agentCalls ?? 0;
       wallets = new Set(parsed.wallets ?? []);
+      scores = (parsed.scores ?? []).slice(-MAX_SCORE_SAMPLES);
     }
   } catch (err) {
     console.error("stats: could not load, starting fresh:", err);
@@ -41,7 +63,7 @@ export function initStats(dataDir: string): void {
 function flush(): void {
   if (!dirty || !file) return;
   try {
-    const out: StatsFile = { wraps, agentCalls, wallets: [...wallets] };
+    const out: StatsFile = { wraps, agentCalls, wallets: [...wallets], scores };
     fs.writeFileSync(file, JSON.stringify(out), "utf-8");
     dirty = false;
   } catch (err) {
@@ -58,6 +80,17 @@ export function recordWrap(address: string): void {
 export function recordAgentCall(): void {
   agentCalls++;
   dirty = true;
+}
+
+// Record a wallet's standout score into the rolling sample, then report where
+// this value ranks against the population profiled so far (self included).
+export function recordAndRankScore(
+  value: number
+): { topPercent: number; sampleSize: number } | null {
+  scores.push(value);
+  if (scores.length > MAX_SCORE_SAMPLES) scores = scores.slice(-MAX_SCORE_SAMPLES);
+  dirty = true;
+  return computePercentile(value, scores);
 }
 
 export function getStats(): { wraps: number; agentCalls: number; uniqueWallets: number } {

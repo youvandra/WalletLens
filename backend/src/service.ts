@@ -7,6 +7,7 @@ import { buildMarkdown } from "./renderer.js";
 import { TtlCache } from "./cache.js";
 import { config } from "./config.js";
 import { extractSybilFeatures, type SybilFeatures } from "./sybil.js";
+import { recordAndRankScore } from "./stats.js";
 import type { WalletMetrics, WalletPersonality } from "./types.js";
 
 // Metrics are the expensive part of a profile (~12 upstream X Layer calls);
@@ -22,6 +23,26 @@ async function getMetrics(address: string): Promise<WalletMetrics> {
 
   const data = await fetchFullWalletData(address);
   const metrics = await analyzeWallet(data);
+
+  // Honest population percentile: rank this wallet's standout score against
+  // every wallet we have profiled. Withheld (undefined) until the sample is
+  // large enough to mean something — never fabricated.
+  const standout = Math.max(
+    metrics.defiScore,
+    metrics.airdropScore,
+    metrics.degenScore,
+    metrics.whaleometer
+  );
+  const rank = recordAndRankScore(standout);
+  if (rank) {
+    metrics.percentile = {
+      standoutScore: standout,
+      topPercent: rank.topPercent,
+      sampleSize: rank.sampleSize,
+      basis: "wallets profiled by TxWrap (not the full X Layer population)",
+    };
+  }
+
   metricsCache.set(key, metrics);
   return metrics;
 }

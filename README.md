@@ -107,6 +107,10 @@ tour the slideshow with no wallet needed.
   "archetype": "The 2AM Degen",     // one of 11 rule-based archetypes
   "archetypeConfidence": 0.85,      // heuristic, capped at 0.95 — never certainty
   "rarity": "S-Tier",               // rank from your own standout score
+  "percentile": {                   // omitted until the sample is large enough
+    "standoutScore": 91, "topPercent": 5, "sampleSize": 420,
+    "basis": "wallets profiled by TxWrap (not the full X Layer population)"
+  },
 
   "totalTx": 847,
   "tokenSymbol": "OKB",
@@ -298,9 +302,12 @@ All from the [X Layer Data API](https://web3.okx.com/onchainos/dev-docs/xlayer/d
 
 These are deliberate constraints, not omissions:
 
-- **No fabricated percentiles.** We do not have the X Layer population
-  distribution, so `rarity` is an honest self-referential tier (S…D) from the
-  wallet's own standout score — never *"top X% of all wallets"*.
+- **No fabricated percentiles.** `rarity` is an honest self-referential tier
+  (S…D) from the wallet's own standout score. A `percentile` (*"top X%"*) is
+  added **only** once we have profiled enough wallets to mean it (a sample
+  floor), is measured against *wallets TxWrap has profiled* — explicitly **not**
+  the full X Layer population — and is floored at 1% (never *"top 0%"*). Below
+  the floor the field is simply absent.
 - **Confidence is capped at 0.95.** A recent-activity window can never justify
   certainty.
 - **No guessed protocol names.** [`labels.ts`](backend/src/labels.ts) resolves
@@ -350,9 +357,11 @@ reliability that both depend on.
   carries a roast line ([`og.ts`](backend/src/og.ts)). A wrapped wallet gets its
   real AI roast baked in at wrap time; any other wallet falls back to the
   deterministic sarcastic title, so the line is always present, no extra AI call.
-- **Real population percentiles** — once `/api/stats` accumulates enough wallets,
-  replace the self-referential `rarity` tier with true *"top X%"* framing (which
-  updates the *No fabricated percentiles* honesty rule honestly, on real data).
+- **Real population percentiles** ✅ *shipped* — `stats.ts` keeps a rolling
+  sample of standout scores; `service.ts` adds a `percentile` block (top X%,
+  sample size, explicit basis) to a profile once the sample clears a floor, and
+  withholds it below. Honest by construction — measured against wallets TxWrap
+  has profiled, not all of X Layer.
 
 Recommended order: labels → cache → `find_sybils` → drainer screen → roast card
 → trajectory → percentiles.

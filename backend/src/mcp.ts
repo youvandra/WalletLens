@@ -64,6 +64,7 @@ export function buildMcpServer(): McpServer {
         archetype: metrics.archetype,
         confidence: metrics.archetypeConfidence,
         rarity: metrics.rarity,
+        percentile: metrics.percentile ?? null,
         signals: activeSignals(metrics),
         evidence: metrics.evidence,
       });

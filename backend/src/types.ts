@@ -125,7 +125,18 @@ export interface WalletMetrics {
   signals: WalletSignals;
   evidence: AnalysisEvidence;
   rarity: string;
+  // Honest population percentile, added by service.ts only once enough wallets
+  // have been profiled to make it meaningful. Absent below the sample floor —
+  // we never fabricate a percentile (see the honesty rules in the README).
+  percentile?: WalletPercentile;
   sarcasticTitle: string;
+}
+
+export interface WalletPercentile {
+  standoutScore: number; // the wallet's strongest of defi/airdrop/degen/whale
+  topPercent: number; // e.g. 5 => top 5% by standout score
+  sampleSize: number; // how many profiles the rank is drawn from
+  basis: string; // what population this is measured against
 }
 
 export type WalletArchetype =

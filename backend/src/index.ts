@@ -120,7 +120,9 @@ app.all("/mcp", (_req, res) => {
 // Human-facing endpoint: full profile plus the roast and a saved slideshow.
 app.post("/api/txwrap", async (req, res) => {
   try {
-    const { address } = req.body as TxWrapRequest;
+    // express.json() leaves req.body undefined when the request carries no
+    // JSON content-type, so default it rather than throwing a 500 on a 400.
+    const { address } = (req.body ?? {}) as TxWrapRequest;
 
     if (!isValidAddress(address || "")) {
       const response: TxWrapResponse = {

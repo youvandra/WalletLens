@@ -208,6 +208,23 @@ test("topCounterparties ranks outgoing recipients with labels", async () => {
   assert.match(m.topCounterparties[1].label, /^0x9999…9999$/);
 });
 
+test("topSenders ranks inbound funding sources separately", async () => {
+  const FUNDER = "0x7777777777777777777777777777777777777777";
+  const SHOP = "0x9999999999999999999999999999999999999999";
+  const transactions = [
+    // 2 inbound from FUNDER, 1 outbound to SHOP
+    tx({ from: FUNDER, to: SUBJECT }),
+    tx({ from: FUNDER, to: SUBJECT }),
+    tx({ from: SUBJECT, to: SHOP }),
+  ];
+  const m = await analyzeWallet(makeData({ transactions }), 10);
+  assert.equal(m.topSenders.length, 1);
+  assert.equal(m.topSenders[0].address, FUNDER);
+  assert.equal(m.topSenders[0].txCount, 2);
+  assert.equal(m.topCounterparties.length, 1);
+  assert.equal(m.topCounterparties[0].address, SHOP);
+});
+
 test("stablecoin-dominant portfolio sets stablecoinHeavy", async () => {
   const m = await analyzeWallet(
     makeData({

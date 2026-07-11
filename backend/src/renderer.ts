@@ -76,9 +76,16 @@ export function buildMarkdown(
       .slice(0, 3)
       .map((c) => `${c.label} (${c.txCount})`)
       .join(" · ");
-    lines.push(`- Top Counterparties: ${cps}`);
+    lines.push(`- Sends to: ${cps}`);
   } else {
     lines.push(`- Top Frenemy: **${metrics.topFrenemyLabel}** \`${metrics.topFrenemy}\``);
+  }
+  if (metrics.topSenders.length) {
+    const srcs = metrics.topSenders
+      .slice(0, 3)
+      .map((c) => `${c.label} (${c.txCount})`)
+      .join(" · ");
+    lines.push(`- Funded by: ${srcs}`);
   }
   lines.push(``);
   lines.push(`**Fun Facts**`);

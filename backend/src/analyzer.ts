@@ -25,6 +25,7 @@ const STABLECOINS = new Set(["USDT", "USDC", "DAI", "FDUSD", "TUSD", "USDE", "BU
 
 function groupByAddress(txs: OkLinkTransaction[], address: string) {
   const recipientCounts = new Map<string, number>();
+  const senderCounts = new Map<string, number>();
   const contractInteractions = new Set<string>();
   const breakdown: ActivityBreakdown = { swap: 0, approve: 0, transfer: 0, native: 0, other: 0 };
   let firstTxTimestamp = Infinity;
@@ -49,6 +50,9 @@ function groupByAddress(txs: OkLinkTransaction[], address: string) {
     if (from === addr && to && to !== addr) {
       recipientCounts.set(to, (recipientCounts.get(to) || 0) + 1);
     }
+    if (to === addr && from && from !== addr) {
+      senderCounts.set(from, (senderCounts.get(from) || 0) + 1);
+    }
 
     if (to.startsWith("0x")) {
       contractInteractions.add(to);
@@ -63,6 +67,7 @@ function groupByAddress(txs: OkLinkTransaction[], address: string) {
 
   return {
     recipientCounts,
+    senderCounts,
     contractInteractions,
     breakdown,
     firstTxTimestamp,
@@ -361,6 +366,7 @@ export async function analyzeWallet(
 
   const {
     recipientCounts,
+    senderCounts,
     contractInteractions,
     breakdown,
     swapCount,
@@ -513,6 +519,7 @@ export async function analyzeWallet(
     topFrenemy,
     topFrenemyLabel: labelAddress(topFrenemy),
     topCounterparties: topCounterparties(recipientCounts, address),
+    topSenders: topCounterparties(senderCounts, address),
     peakHour: findPeakHour(hourCounts),
     activityStreak: computeActivityStreak(dailyActivity),
     trajectory: computeTrajectory(transactions),

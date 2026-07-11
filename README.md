@@ -145,6 +145,9 @@ tour the slideshow with no wallet needed.
   "topCounterparties": [           // top-5 outgoing, labeled when verified
     { "address": "0x74b7…6d22", "label": "USDC", "txCount": 41 }
   ],
+  "topSenders": [                  // inbound mirror: who funds this wallet
+    { "address": "0x8f3a…7f80", "label": "0x8f3a…7f80", "txCount": 17 }
+  ],
 
   "summary": "The 2AM Degen (confidence 0.85, S-Tier), momentum heating, …",
   "signals": { "nightOwl": true, "approvalHeavy": true, "likelyBot": false, /* … */ },

@@ -127,6 +127,8 @@ export interface WalletMetrics {
   topFrenemy: string;
   topFrenemyLabel: string;
   topCounterparties: Counterparty[];
+  // Inbound mirror of topCounterparties: who funds / sends to this wallet.
+  topSenders: Counterparty[];
   peakHour: number;
   activityStreak: number;
   trajectory: WalletTrajectory;

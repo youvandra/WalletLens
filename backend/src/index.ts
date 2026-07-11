@@ -5,7 +5,6 @@ import fs from "fs";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { config } from "./config.js";
 import { profileWallet, isValidAddress } from "./service.js";
-import { buildSlideshowHtml } from "./renderer.js";
 import { buildMcpServer } from "./mcp.js";
 import { x402Gate, x402Info } from "./x402.js";
 import { renderOgPng } from "./og.js";
@@ -145,15 +144,12 @@ app.post("/api/txwrap", async (req, res) => {
 
     const { metrics, personality, markdown } = await profileWallet(address, { roast: true });
 
-    // Generate and save slideshow HTML
-    const html = buildSlideshowHtml(address, metrics, personality!);
     if (!fs.existsSync(SLIDES_DIR)) {
       fs.mkdirSync(SLIDES_DIR, { recursive: true });
     }
-    const slideFile = `${address.toLowerCase()}.html`;
-    fs.writeFileSync(path.join(SLIDES_DIR, slideFile), html, "utf-8");
 
-    // Cache metrics for the OG image and drop any stale render.
+    // Cache metrics for the OG image (the shareable /wrap/:address route renders
+    // the SPA, so no server-side slideshow HTML is needed).
     fs.writeFileSync(
       path.join(SLIDES_DIR, `${address.toLowerCase()}.json`),
       JSON.stringify(metrics),

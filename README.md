@@ -454,7 +454,7 @@ backend/src/
   price.ts          Live OKB/USD price (cached, never-throw fallback)
   cache.ts          Generic in-memory TTL cache (memoizes wallet metrics)
   personality.ts    AI roast (optional layer)
-  renderer.ts       Agent markdown + slideshow HTML
+  renderer.ts       Agent markdown report (roast layer)
   og.ts             1200x630 share card (SVG -> PNG)
   stats.ts          Real usage counters, persisted to disk
   types.ts          Shared types

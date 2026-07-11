@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   check:
-    name: Typecheck
+    name: Typecheck & test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,6 +23,8 @@ jobs:
       - run: npm ci
         working-directory: backend
       - run: npx tsc --noEmit
+        working-directory: backend
+      - run: npm test
         working-directory: backend
 
   deploy:

@@ -1,6 +1,10 @@
 // Shared wallet-profiling pipeline used by both the REST endpoint and the MCP
 // server, so the analysis logic lives in exactly one place.
-import { fetchFullWalletData } from "./fetcher.js";
+import {
+  fetchFullWalletData,
+  fetchAddressProfile,
+  fetchAllTransactions,
+} from "./fetcher.js";
 import { analyzeWallet } from "./analyzer.js";
 import { generatePersonality } from "./personality.js";
 import { buildMarkdown } from "./renderer.js";
@@ -44,6 +48,44 @@ async function getMetrics(address: string): Promise<WalletMetrics> {
   }
 
   metricsCache.set(key, metrics);
+  return metrics;
+}
+
+// Light screen for the bulk tool: profile + one page of recent transactions
+// only (~2 upstream calls instead of ~12), so screening 20 wallets in one tool
+// call stays fast and under the rate limiter. A full profile in cache is
+// reused; light results are cached under their own key and never feed the
+// population percentile sample (they are partial by design).
+export async function lightScreenMetrics(address: string): Promise<WalletMetrics> {
+  if (!isValidAddress(address)) {
+    throw new Error("Invalid address format. Must be a 0x-prefixed 42-char address.");
+  }
+  const key = address.toLowerCase();
+  const full = metricsCache.get(key);
+  if (full) return full;
+  const lightKey = `light:${key}`;
+  const cached = metricsCache.get(lightKey);
+  if (cached) return cached;
+
+  const [profile, transactions] = await Promise.all([
+    fetchAddressProfile(address),
+    fetchAllTransactions(address, 1),
+  ]);
+  const metrics = await analyzeWallet({
+    profile,
+    transactions,
+    holdings: [],
+    tokenTransfers: [],
+    nftCount: 0,
+    internalTxCount: 0,
+    crossChain: { total: 0, deposits: 0, withdrawals: 0 },
+  });
+  // Be explicit that portfolio-dependent fields were not fetched.
+  metrics.evidence.window = "light screen: most recent transactions only";
+  metrics.evidence.caveat =
+    "Light screen — portfolio, NFT, internal-tx and cross-chain data were not fetched; " +
+    "portfolio-dependent signals may read false. Use profile_wallet or screen_wallet for the full picture.";
+  metricsCache.set(lightKey, metrics);
   return metrics;
 }
 

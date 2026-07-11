@@ -40,6 +40,25 @@ function sweepStale(day: string): void {
   sweepDay = day;
 }
 
+// Read-only view of an IP's quota — consumes nothing. Powers the free
+// get_quota MCP tool so agents can meter their spend before it happens.
+export function quotaStatus(ip: string): {
+  enabled: boolean;
+  freeDaily: number;
+  usedToday: number;
+  remainingToday: number;
+} {
+  const day = new Date().toISOString().slice(0, 10);
+  const entry = quota.get(ip);
+  const usedToday = entry && entry.day === day ? entry.used : 0;
+  return {
+    enabled: isEnabled(),
+    freeDaily: config.x402FreeDaily,
+    usedToday,
+    remainingToday: Math.max(0, config.x402FreeDaily - usedToday),
+  };
+}
+
 function takeFreeCall(ip: string): number {
   const day = new Date().toISOString().slice(0, 10);
   sweepStale(day);
@@ -96,8 +115,11 @@ function buildPaidMiddleware(): Handler {
 export function x402Gate(req: Request, res: Response, next: NextFunction): void {
   if (!isEnabled()) return next();
 
-  const method = (req.body as { method?: string } | undefined)?.method;
-  if (method !== "tools/call") return next();
+  const body = req.body as { method?: string; params?: { name?: string } } | undefined;
+  if (body?.method !== "tools/call") return next();
+  // Billing introspection stays free — an agent must be able to check its
+  // quota without spending it.
+  if (body?.params?.name === "get_quota") return next();
 
   const remaining = takeFreeCall(req.ip || "unknown");
   if (remaining >= 0) {

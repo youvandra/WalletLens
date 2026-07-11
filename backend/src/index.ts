@@ -106,7 +106,7 @@ app.post("/mcp", x402Gate, async (req, res) => {
   if ((req.body as { method?: string } | undefined)?.method === "tools/call") {
     recordAgentCall();
   }
-  const server = buildMcpServer();
+  const server = buildMcpServer(req.ip);
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
   res.on("close", () => {
     transport.close();

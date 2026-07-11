@@ -68,8 +68,13 @@ curl -s -X POST https://txwrap.my.id/mcp \
 ```json
 {
   "address": "0x69c236e021f5775b0d0328ded5eac708e3b869df",
+  "summary": "Risk medium — recommendation: caution. dormant: no activity for 121 days. Based on 250 of 3552345 txs.",
   "risk": "medium",
-  "riskFlags": ["dormant", "contractHeavy"],
+  "recommendation": "caution",
+  "riskFlags": ["dormant"],
+  "reasons": ["dormant: no activity for 121 days"],
+  "blocklist": { "selfBlocklisted": false, "flaggedCounterparties": [] },
+  "signalReasons": { "dormant": "no activity for 121 days" },
   "confidence": 0.85,
   "evidence": {
     "analyzedTx": 250,
@@ -96,6 +101,8 @@ tour the slideshow with no wallet needed.
 | `screen_wallet` | `address` | Risk screen: coarse risk level, a `proceed`/`caution`/`avoid` recommendation with per-flag numeric `reasons`, all 13 signals, a blocklist check (self + counterparties), evidence. |
 | `compare_wallets` | `addresses[2..5]` | Side-by-side profiles, scores, and signals for ranking. |
 | `find_sybils` | `addresses[3..20]` | Coordination screen: clusters wallets by shared counterparties, shared funder, and correlated timing, with a per-pair score. |
+| `screen_wallets` | `addresses[2..20]` | Bulk light screen in one call: per-wallet risk, recommendation, flags, archetype, momentum. Made for vetting an allowlist cheaply; follow up on flagged wallets with `screen_wallet`. |
+| `get_quota` | — | **Free.** Remaining free calls today + current x402 pricing. Never counts against the quota. |
 
 ### Profile shape
 
@@ -195,6 +202,8 @@ now — it needs decoded call data the tx-list endpoint doesn't return.
 | Trading / OTC | *"Before I send funds to `0xABC…`, screen it for bot / sybil / dust-farming risk."* | `screen_wallet` |
 | Airdrop / protocol | *"I'm airdropping to these 5 wallets — which look like farmers?"* | `compare_wallets` + `screen_wallet` |
 | Airdrop / anti-sybil | *"Are these 12 wallets secretly one operator?"* | `find_sybils` |
+| Allowlist vetting | *"Screen these 20 wallets cheaply, flag the risky ones."* | `screen_wallets`, then `screen_wallet` on hits |
+| Budgeting | *"How many free calls do I have left today?"* | `get_quota` (free) |
 | Research / portfolio | *"What kind of trader is `0xABC…`?"* | `profile_wallet` |
 | Risk | *"Rank these 3 addresses by activity and trustworthiness."* | `compare_wallets` |
 | Growth / CRM | *"Classify these wallets into archetypes for our outreach list."* | `classify_wallet` |
@@ -210,8 +219,8 @@ on X Layer** (`eip155:196`), through OKX's official SDK
 
 **How it flows:**
 
-1. `initialize` and `tools/list` are **always free** — any client can connect
-   and discover the tools.
+1. `initialize`, `tools/list`, and the `get_quota` tool are **always free** —
+   any client can connect, discover the tools, and budget its spend.
 2. Each IP gets `X402_FREE_DAILY` (default 20) free `tools/call` per day.
    Remaining calls are reported in the `X-Free-Calls-Remaining` header.
 3. Past the quota the server answers **HTTP 402** with a `PAYMENT-REQUIRED`
@@ -242,6 +251,9 @@ Decoded `PAYMENT-REQUIRED` challenge:
 ```
 
 Check live pricing any time: `GET /x402/info`.
+
+> **Value note:** pricing is per tool call, not per wallet — one `screen_wallets`
+> call vets up to 20 addresses, and one `find_sybils` call clusters up to 20.
 
 ---
 
@@ -340,6 +352,11 @@ product optimizes for — agent decision-value and human virality — plus the
 reliability that both depend on.
 
 ### Agent intelligence
+- **Bulk screening + billing introspection** ✅ *shipped* — `screen_wallets`
+  light-screens up to 20 wallets in one call (~2 upstream fetches per wallet
+  instead of ~12), and the free `get_quota` tool reports remaining free calls +
+  live pricing so an agent can budget before it spends. All tools now carry the
+  MCP `readOnlyHint` annotation.
 - **Decision-grade output v2** ✅ *shipped* — every fired signal ships its
   numeric justification (`signalReasons`), every profile lists its top-5 labeled
   counterparties, every tool result opens with a deterministic `summary`
@@ -443,8 +460,9 @@ npx tsc --noEmit  # typecheck
 backend/src/
   index.ts          Express server, routes, MCP + OG mounting
   service.ts        Shared pipeline: fetch -> analyze -> (roast)
-  mcp.ts            MCP server, five agent tools
+  mcp.ts            MCP server, seven agent tools
   sybil.ts          Coordination / sybil detection (pure, used by find_sybils)
+  risk.ts           Shared risk-verdict mapping (single + bulk screens)
   blocklist.ts      Known-malicious address registry (screen_wallet)
   x402.ts           Payment gate (freemium + HTTP 402)
   xlayer-client.ts  X Layer Data API, HMAC-SHA256 auth

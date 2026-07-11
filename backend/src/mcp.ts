@@ -5,6 +5,7 @@ import { profileWallet, getSybilFeatures, lightScreenMetrics } from "./service.j
 import { analyzeSybils } from "./sybil.js";
 import { isBlocklisted, findBlocklisted } from "./blocklist.js";
 import { riskLevel, recommendationFor } from "./risk.js";
+import { checkApprovals } from "./approvals.js";
 import { quotaStatus, x402Info } from "./x402.js";
 import type { WalletMetrics } from "./types.js";
 
@@ -248,6 +249,28 @@ export function buildMcpServer(callerIp = "unknown"): McpServer {
         wallets,
         note: "Light screen — counterparty blocklist and portfolio-dependent signals are not evaluated here; run screen_wallet on flagged addresses for the full check.",
       });
+    }
+  );
+
+  server.registerTool(
+    "check_approvals",
+    {
+      title: "Check ERC-20 approvals (drainer screen)",
+      annotations: READ_ONLY,
+      description:
+        "Approval hygiene for an X Layer wallet — the drainer check. Decodes the wallet's recent successful approve() calls from full calldata and reports each spender and allowance, flagging UNLIMITED allowances and spenders on the known-malicious blocklist. Use when assessing whether a wallet (yours or a counterparty's) has dangerous open allowances.",
+      inputSchema: { address: ADDRESS },
+    },
+    async ({ address }) => {
+      const r = await checkApprovals(address);
+      const summary =
+        r.inspected === 0
+          ? `No successful approvals found in the analyzed window for ${address.slice(0, 10)}….`
+          : `${r.inspected} approval(s) decoded: ${r.unlimited} unlimited, ${r.blocklistedSpenders.length} blocklisted spender(s).` +
+            (r.unlimited > 0
+              ? " Unlimited allowances let the spender move that token any time — revoke unless the spender is fully trusted."
+              : "");
+      return json({ summary, ...r });
     }
   );
 

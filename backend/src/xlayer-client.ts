@@ -183,6 +183,23 @@ export async function getAddressTransactions(
   );
 }
 
+// ---- Transaction detail (includes full calldata) ----
+
+export interface XlayerTxDetail {
+  txid: string;
+  methodId: string;
+  inputData: string;
+  state: string;
+  transactionTime: string;
+  outputDetails: { outputHash: string; isContract: boolean }[];
+}
+
+export async function getTransactionDetail(txId: string): Promise<XlayerTxDetail> {
+  return apiGet<XlayerTxDetail>(
+    `/api/v5/xlayer/transaction/transaction-fills?chainShortName=xlayer&txid=${txId}`
+  );
+}
+
 // ---- Token balances (ERC-20 / -721 / -1155 holdings) ----
 
 export interface XlayerTokenBalance {

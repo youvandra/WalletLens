@@ -220,7 +220,7 @@
         <section class="sec" style="background:#C6FF00">
           <div class="deco deco-8"></div>
           <div class="wrapx">
-            <div class="eyebrow rv">Eight MCP tools</div>
+            <div class="eyebrow rv">Nine MCP tools</div>
             <h2 class="h2 rv">CALL IT LIKE<br>ANY OTHER TOOL.</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4" style="margin-top:36px">
               <template x-for="t in tools" :key="t.name">
@@ -595,6 +595,8 @@
             desc: 'Up to 20 wallets, one call: risk, verdict, momentum per wallet. Light mode — cheap enough to run on the whole list.' },
           { name: 'check_approvals', title: 'The drainer check', hex: '#0a0a0a', tilt: '-rotate-1',
             desc: 'Decodes recent approve() calldata: every spender, every allowance. Flags unlimited approvals and blocklisted spenders before they drain.' },
+          { name: 'diff_wallet', title: 'What changed?', hex: '#2B4BFF', tilt: 'rotate-1',
+            desc: 'Baseline on first call, delta on every call after: archetype flips, signals gained or lost, new txs, net-worth moves. Monitoring as a tool call.' },
           { name: 'get_quota', title: 'Budget first — free', hex: '#00A676', tilt: 'rotate-1',
             desc: 'Remaining free calls today plus live x402 pricing. Never counts against the quota, so agents can meter before they spend.' },
         ],

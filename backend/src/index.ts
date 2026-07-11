@@ -9,6 +9,7 @@ import { buildMcpServer } from "./mcp.js";
 import { x402Gate, x402Info } from "./x402.js";
 import { renderOgPng } from "./og.js";
 import { initStats, recordWrap, recordAgentCall, getStats } from "./stats.js";
+import { initSnapshots } from "./snapshots.js";
 import { XLayerRateLimitError } from "./xlayer-client.js";
 import type { TxWrapRequest, TxWrapResponse, WalletMetrics } from "./types.js";
 
@@ -203,6 +204,7 @@ app.post("/api/txwrap", async (req, res) => {
 });
 
 initStats(path.join(__dirname, "..", "data"));
+initSnapshots(path.join(__dirname, "..", "data"));
 
 app.listen(config.port, () => {
   console.log(`TxWrap server running on port ${config.port}`);

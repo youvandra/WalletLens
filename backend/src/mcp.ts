@@ -6,6 +6,7 @@ import { analyzeSybils } from "./sybil.js";
 import { isBlocklisted, findBlocklisted } from "./blocklist.js";
 import { riskLevel, recommendationFor } from "./risk.js";
 import { checkApprovals } from "./approvals.js";
+import { loadSnapshot, saveSnapshot, snapshotOf, diffSnapshots } from "./snapshots.js";
 import { quotaStatus, x402Info } from "./x402.js";
 import type { WalletMetrics } from "./types.js";
 
@@ -271,6 +272,47 @@ export function buildMcpServer(callerIp = "unknown"): McpServer {
               ? " Unlimited allowances let the spender move that token any time — revoke unless the spender is fully trusted."
               : "");
       return json({ summary, ...r });
+    }
+  );
+
+  server.registerTool(
+    "diff_wallet",
+    {
+      title: "What changed since last check",
+      annotations: READ_ONLY,
+      description:
+        "Monitoring primitive: profiles the wallet and reports what CHANGED since this tool last looked at it — archetype or momentum flips, behavioral signals gained or lost, new transactions, and net-worth movement. First call saves a baseline; every later call returns the delta. Use on a schedule to watch a counterparty, a treasury, or your own user's wallet.",
+      inputSchema: { address: ADDRESS },
+    },
+    async ({ address }) => {
+      const { metrics } = await profileWallet(address);
+      const prev = loadSnapshot(address);
+      const curr = snapshotOf(metrics);
+      saveSnapshot(address, curr);
+
+      if (!prev) {
+        return json({
+          address,
+          baseline: true,
+          summary:
+            "First observation — baseline saved. Call diff_wallet again later to see what changed.",
+          current: curr,
+        });
+      }
+
+      const diff = diffSnapshots(prev, curr);
+      const sinceH = Math.round((curr.takenAt - prev.takenAt) / 3600000);
+      return json({
+        address,
+        baseline: false,
+        sinceHours: sinceH,
+        summary: diff.changed
+          ? `${diff.changes.length} change(s) since last check (~${sinceH}h ago): ${diff.changes.join("; ")}.`
+          : `No meaningful change since last check (~${sinceH}h ago).`,
+        ...diff,
+        previous: prev,
+        current: curr,
+      });
     }
   );
 

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { computePercentile } from "./stats.js";
+import { computePercentile, summarizeScores } from "./stats.js";
 
 test("withholds a percentile below the sample floor", () => {
   assert.equal(computePercentile(90, [10, 20, 30], 30), null);
@@ -18,6 +18,16 @@ test("a median score lands near the top 50%", () => {
   const sample = Array.from({ length: 100 }, (_, i) => i); // 0..99
   const r = computePercentile(49, sample, 30);
   assert.equal(r!.topPercent, 50); // 50 values (50..99) score higher
+});
+
+test("summarizeScores reports p50/p90/max above the floor, null below", () => {
+  const sample = Array.from({ length: 100 }, (_, i) => i); // 0..99
+  const s = summarizeScores(sample, 30);
+  assert.ok(s);
+  assert.equal(s!.p50, 50);
+  assert.equal(s!.p90, 90);
+  assert.equal(s!.max, 99);
+  assert.equal(summarizeScores([1, 2, 3], 30), null);
 });
 
 test("respects a custom minimum sample size", () => {

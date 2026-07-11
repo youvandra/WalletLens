@@ -117,9 +117,10 @@ export function x402Gate(req: Request, res: Response, next: NextFunction): void 
 
   const body = req.body as { method?: string; params?: { name?: string } } | undefined;
   if (body?.method !== "tools/call") return next();
-  // Billing introspection stays free — an agent must be able to check its
-  // quota without spending it.
-  if (body?.params?.name === "get_quota") return next();
+  // Introspection stays free — an agent must be able to check its quota (and
+  // the population its percentile is measured against) without spending.
+  const FREE_TOOLS = new Set(["get_quota", "get_population"]);
+  if (FREE_TOOLS.has(body?.params?.name ?? "")) return next();
 
   const remaining = takeFreeCall(req.ip || "unknown");
   if (remaining >= 0) {

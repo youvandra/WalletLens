@@ -11,6 +11,7 @@ interface StatsFile {
   agentCalls: number;
   wallets: string[];
   scores: number[];
+  archetypes: Record<string, number>;
 }
 
 // Below this many samples a percentile would be noise, so we withhold it rather
@@ -23,6 +24,7 @@ let wraps = 0;
 let agentCalls = 0;
 let wallets = new Set<string>();
 let scores: number[] = [];
+let archetypes: Record<string, number> = {};
 let dirty = false;
 
 // Pure: what top-percent a value lands in, or null below the sample floor.
@@ -49,6 +51,7 @@ export function initStats(dataDir: string): void {
       agentCalls = parsed.agentCalls ?? 0;
       wallets = new Set(parsed.wallets ?? []);
       scores = (parsed.scores ?? []).slice(-MAX_SCORE_SAMPLES);
+      archetypes = parsed.archetypes ?? {};
     }
   } catch (err) {
     console.error("stats: could not load, starting fresh:", err);
@@ -63,7 +66,7 @@ export function initStats(dataDir: string): void {
 function flush(): void {
   if (!dirty || !file) return;
   try {
-    const out: StatsFile = { wraps, agentCalls, wallets: [...wallets], scores };
+    const out: StatsFile = { wraps, agentCalls, wallets: [...wallets], scores, archetypes };
     fs.writeFileSync(file, JSON.stringify(out), "utf-8");
     dirty = false;
   } catch (err) {
@@ -95,4 +98,40 @@ export function recordAndRankScore(
 
 export function getStats(): { wraps: number; agentCalls: number; uniqueWallets: number } {
   return { wraps, agentCalls, uniqueWallets: wallets.size };
+}
+
+export function recordArchetype(archetype: string): void {
+  archetypes[archetype] = (archetypes[archetype] || 0) + 1;
+  dirty = true;
+}
+
+// Pure distribution summary over a score sample. Null below the same floor the
+// percentile uses — we never summarize noise.
+export function summarizeScores(
+  sample: number[],
+  minSample = MIN_PERCENTILE_SAMPLE
+): { p50: number; p90: number; max: number } | null {
+  if (sample.length < minSample) return null;
+  const sorted = [...sample].sort((a, b) => a - b);
+  const at = (q: number) => sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))];
+  return { p50: at(0.5), p90: at(0.9), max: sorted[sorted.length - 1] };
+}
+
+// Aggregate view of every wallet TxWrap has profiled — the population behind
+// the percentile field. Honest by construction: sample sizes included, basis
+// explicit, distribution withheld below the sample floor.
+export function getPopulation(): {
+  profiledSamples: number;
+  uniqueWallets: number;
+  archetypes: Record<string, number>;
+  standoutScores: { p50: number; p90: number; max: number } | null;
+  basis: string;
+} {
+  return {
+    profiledSamples: scores.length,
+    uniqueWallets: wallets.size,
+    archetypes,
+    standoutScores: summarizeScores(scores),
+    basis: "wallets profiled by TxWrap (not the full X Layer population)",
+  };
 }

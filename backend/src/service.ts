@@ -11,7 +11,7 @@ import { buildMarkdown } from "./renderer.js";
 import { TtlCache } from "./cache.js";
 import { config } from "./config.js";
 import { extractSybilFeatures, type SybilFeatures } from "./sybil.js";
-import { recordAndRankScore } from "./stats.js";
+import { recordAndRankScore, recordArchetype } from "./stats.js";
 import type { WalletMetrics, WalletPersonality } from "./types.js";
 
 // Metrics are the expensive part of a profile (~12 upstream X Layer calls);
@@ -38,6 +38,7 @@ async function getMetrics(address: string): Promise<WalletMetrics> {
     metrics.whaleometer
   );
   const rank = recordAndRankScore(standout);
+  recordArchetype(metrics.archetype);
   if (rank) {
     metrics.percentile = {
       standoutScore: standout,

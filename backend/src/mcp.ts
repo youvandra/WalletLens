@@ -12,6 +12,7 @@ import { loadSnapshot, saveSnapshot, snapshotOf, diffSnapshots } from "./snapsho
 import { METHODOLOGY, METHODOLOGY_URI } from "./methodology.js";
 import { attest } from "./attest.js";
 import { quotaStatus, x402Info } from "./x402.js";
+import { getPopulation } from "./stats.js";
 import type { WalletMetrics } from "./types.js";
 
 const ADDRESS = z
@@ -396,6 +397,27 @@ export function buildMcpServer(callerIp = "unknown"): McpServer {
         note: q.enabled
           ? `Past ${q.freeDaily} free calls/day, each tools/call costs the listed price via x402 (HTTP 402, settled on-chain in USDT0).`
           : "The x402 gate is currently off — all tool calls are free.",
+      });
+    }
+  );
+
+  server.registerTool(
+    "get_population",
+    {
+      title: "Population stats — free",
+      annotations: READ_ONLY,
+      description:
+        "Free aggregate view of every wallet TxWrap has profiled: archetype distribution, standout-score distribution (p50/p90/max), sample sizes. This is the exact population the `percentile` field is measured against — call it to interpret a percentile, or for a feel of what X Layer wallet behavior looks like. Never counts against the quota.",
+      inputSchema: {},
+    },
+    async () => {
+      const p = getPopulation();
+      return json({
+        ...p,
+        note:
+          p.standoutScores === null
+            ? "Score distribution is withheld until at least 30 wallets have been profiled — we do not summarize noise."
+            : "Distribution reflects wallets profiled by TxWrap, growing with every profile.",
       });
     }
   );

@@ -220,7 +220,7 @@
         <section class="sec" style="background:#C6FF00">
           <div class="deco deco-8"></div>
           <div class="wrapx">
-            <div class="eyebrow rv">Ten MCP tools</div>
+            <div class="eyebrow rv">Eleven MCP tools</div>
             <h2 class="h2 rv">CALL IT LIKE<br>ANY OTHER TOOL.</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4" style="margin-top:36px">
               <template x-for="t in tools" :key="t.name">
@@ -601,6 +601,8 @@
             desc: 'The wallet looks clean — but who funds it? Light-screens its top counterparties both directions and verdicts the whole neighborhood.' },
           { name: 'get_quota', title: 'Budget first — free', hex: '#00A676', tilt: 'rotate-1',
             desc: 'Remaining free calls today plus live x402 pricing. Never counts against the quota, so agents can meter before they spend.' },
+          { name: 'get_population', title: 'The population — free', hex: '#8B3DFF', tilt: '-rotate-1',
+            desc: 'Archetype and score distributions across every wallet TxWrap has profiled — the exact population your percentile is measured against.' },
         ],
         steps: [
           { t: 'Fetch, in parallel', d: 'Seven X Layer Data API endpoints at once: balances, native transactions, ERC-20 holdings, NFT count, token transfer flows, internal contract calls, and cross-chain hops. Any supplementary endpoint may fail without taking the profile down.' },

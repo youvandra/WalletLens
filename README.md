@@ -106,6 +106,7 @@ tour the slideshow with no wallet needed.
 | `diff_wallet` | `address` | Monitoring: first call saves a baseline, every later call reports what **changed** — archetype/momentum flips, signals gained/lost, new txns, net-worth moves. |
 | `expand_risk` | `address` | Guilt-by-association: light-screens the wallet's top counterparties (both directions) and returns an aggregate **neighborhood** verdict. Verified token contracts excluded. |
 | `get_quota` | — | **Free.** Remaining free calls today + current x402 pricing. Never counts against the quota. |
+| `get_population` | — | **Free.** Aggregate of every wallet TxWrap has profiled: archetype + score distributions — the exact population behind the `percentile` field. |
 
 ### Profile shape
 
@@ -490,7 +491,7 @@ npx tsc --noEmit  # typecheck
 backend/src/
   index.ts          Express server, routes, MCP + OG mounting
   service.ts        Shared pipeline: fetch -> analyze -> (roast)
-  mcp.ts            MCP server, ten agent tools
+  mcp.ts            MCP server, eleven agent tools
   neighborhood.ts   1-hop neighbor picking + circle verdict (expand_risk)
   sybil.ts          Coordination / sybil detection (pure, used by find_sybils)
   risk.ts           Shared risk-verdict mapping (single + bulk screens)

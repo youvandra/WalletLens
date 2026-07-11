@@ -104,6 +104,7 @@ tour the slideshow with no wallet needed.
 | `screen_wallets` | `addresses[2..20]` | Bulk light screen in one call: per-wallet risk, recommendation, flags, archetype, momentum. Made for vetting an allowlist cheaply; follow up on flagged wallets with `screen_wallet`. |
 | `check_approvals` | `address` | The drainer check: decodes recent `approve()` calldata and reports each spender + allowance, flagging **unlimited** allowances and blocklisted spenders. |
 | `diff_wallet` | `address` | Monitoring: first call saves a baseline, every later call reports what **changed** — archetype/momentum flips, signals gained/lost, new txns, net-worth moves. |
+| `expand_risk` | `address` | Guilt-by-association: light-screens the wallet's top counterparties (both directions) and returns an aggregate **neighborhood** verdict. Verified token contracts excluded. |
 | `get_quota` | — | **Free.** Remaining free calls today + current x402 pricing. Never counts against the quota. |
 
 ### Profile shape
@@ -217,6 +218,7 @@ flags unlimited allowances and blocklisted spenders.
 | Allowlist vetting | *"Screen these 20 wallets cheaply, flag the risky ones."* | `screen_wallets`, then `screen_wallet` on hits |
 | Security / hygiene | *"Does this wallet have dangerous open allowances?"* | `check_approvals` |
 | Monitoring | *"Watch this counterparty — tell me when its behavior changes."* | `diff_wallet` on a schedule |
+| Deep due diligence | *"The wallet looks clean — but who is it dealing with?"* | `expand_risk` |
 | Budgeting | *"How many free calls do I have left today?"* | `get_quota` (free) |
 | Research / portfolio | *"What kind of trader is `0xABC…`?"* | `profile_wallet` |
 | Risk | *"Rank these 3 addresses by activity and trustworthiness."* | `compare_wallets` |
@@ -476,7 +478,8 @@ npx tsc --noEmit  # typecheck
 backend/src/
   index.ts          Express server, routes, MCP + OG mounting
   service.ts        Shared pipeline: fetch -> analyze -> (roast)
-  mcp.ts            MCP server, nine agent tools
+  mcp.ts            MCP server, ten agent tools
+  neighborhood.ts   1-hop neighbor picking + circle verdict (expand_risk)
   sybil.ts          Coordination / sybil detection (pure, used by find_sybils)
   risk.ts           Shared risk-verdict mapping (single + bulk screens)
   approvals.ts      ERC-20 approval decoding — the drainer check

@@ -4,6 +4,8 @@ import { z } from "zod";
 import { profileWallet, getSybilFeatures, lightScreenMetrics } from "./service.js";
 import { analyzeSybils } from "./sybil.js";
 import { isBlocklisted, findBlocklisted } from "./blocklist.js";
+import { isKnownAddress } from "./labels.js";
+import { pickNeighbors, neighborhoodRisk } from "./neighborhood.js";
 import { riskLevel, recommendationFor } from "./risk.js";
 import { checkApprovals } from "./approvals.js";
 import { loadSnapshot, saveSnapshot, snapshotOf, diffSnapshots } from "./snapshots.js";
@@ -273,6 +275,62 @@ export function buildMcpServer(callerIp = "unknown"): McpServer {
               ? " Unlimited allowances let the spender move that token any time — revoke unless the spender is fully trusted."
               : "");
       return json({ summary, ...r });
+    }
+  );
+
+  server.registerTool(
+    "expand_risk",
+    {
+      title: "1-hop neighborhood risk",
+      annotations: READ_ONLY,
+      description:
+        "Screens a wallet's CIRCLE, not just the wallet: pulls its top counterparties (both directions), light-screens each one, and returns an aggregate neighborhood verdict — e.g. 'this wallet's funder is blocklisted' or '3 of its 5 main counterparties look like dust farms'. Verified token contracts are excluded (holding USDC is not a relationship). Use when a wallet itself looks clean but you want guilt-by-association checked before trusting it.",
+      inputSchema: { address: ADDRESS },
+    },
+    async ({ address }) => {
+      const { metrics } = await profileWallet(address);
+      const { neighbors, skippedKnown } = pickNeighbors(
+        metrics.topCounterparties,
+        metrics.topSenders,
+        { max: 5, skip: isKnownAddress }
+      );
+
+      const screened = await Promise.all(
+        neighbors.map(async (n) => {
+          const m = await lightScreenMetrics(n.address);
+          const flags = activeSignals(m).filter((f) => RISK_FLAGS.includes(f));
+          const blocklisted = isBlocklisted(n.address);
+          if (blocklisted) flags.push("blocklisted");
+          return {
+            ...n,
+            risk: riskLevel(flags.length, blocklisted),
+            blocklisted,
+            riskFlags: flags,
+            archetype: m.archetype,
+            momentum: m.trajectory.momentum,
+          };
+        })
+      );
+
+      const targetFlags = activeSignals(metrics).filter((f) => RISK_FLAGS.includes(f));
+      const targetBlocklisted = isBlocklisted(address);
+      const targetRisk = riskLevel(targetFlags.length, targetBlocklisted);
+      const circleRisk = neighborhoodRisk(screened);
+
+      const risky = screened.filter((n) => n.risk !== "low" || n.blocklisted);
+      const summary =
+        `Target risk ${targetRisk}; neighborhood risk ${circleRisk} across ${screened.length} ` +
+        `screened counterpart(y/ies)${risky.length ? ` — ${risky.map((n) => `${n.label}: ${n.risk}${n.blocklisted ? " (BLOCKLISTED)" : ""}`).join(", ")}` : " — circle looks clean"}.`;
+
+      return json({
+        address,
+        summary,
+        target: { risk: targetRisk, riskFlags: targetFlags, blocklisted: targetBlocklisted },
+        neighborhoodRisk: circleRisk,
+        neighbors: screened,
+        skippedKnownContracts: skippedKnown,
+        note: "Neighbors are light-screened (profile + recent txs only). Relations come from the target's analyzed transaction window.",
+      });
     }
   );
 

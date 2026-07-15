@@ -55,7 +55,15 @@ export function x402Gate(req: Request, res: Response, next: NextFunction): void 
 
   // If the request carries a payment proof from the OKX replay, let it through.
   // The platform has already verified payment on-chain via the task system.
-  if (req.headers["x402-authorization"] || req.headers["x402-payment"] || req.headers["x-pay-signature"]) {
+  // The OKX SDK carries the proof in the PAYMENT-SIGNATURE header (Node lowercases
+  // header keys); the others are kept as harmless fallbacks.
+  if (
+    req.headers["payment-signature"] ||
+    req.headers["x-payment"] ||
+    req.headers["x402-authorization"] ||
+    req.headers["x402-payment"] ||
+    req.headers["x-pay-signature"]
+  ) {
     return next();
   }
 
@@ -65,6 +73,7 @@ export function x402Gate(req: Request, res: Response, next: NextFunction): void 
     x402Version: 2,
     resource: {
       url: `${req.protocol}://${req.get("host")}/mcp`,
+      description: "WalletLens wallet-intelligence tool call",
       mimeType: "application/json",
     },
     accepts: [{

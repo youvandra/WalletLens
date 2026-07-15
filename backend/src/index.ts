@@ -149,9 +149,16 @@ app.post("/mcp", x402Gate, async (req, res) => {
   }
 });
 
-// Stateless mode: no session-based GET stream / DELETE.
+app.get("/mcp", (_req, res) => {
+  res.json({ service: "walletlens", type: "A2MCP", note: "Use POST /mcp with JSON-RPC body" });
+});
+
+app.options("/mcp", (_req, res) => {
+  res.setHeader("Allow", "POST, OPTIONS, GET").status(204).end();
+});
+
 app.all("/mcp", (_req, res) => {
-  res.status(405).json({ error: "Method not allowed" });
+  res.status(405).json({ error: "Method not allowed. Use POST /mcp with Content-Type: application/json and Accept: application/json, text/event-stream" });
 });
 
 // Human-facing endpoint: full profile plus the roast and a saved slideshow.

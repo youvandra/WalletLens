@@ -60,7 +60,7 @@ jobs:
           sleep 5
 
           echo "health:"
-          curl -fsS --max-time 15 https://txwrap.my.id/health | tee /dev/stderr | grep -q '"service":"txwrap"'
+          curl -fsS --max-time 15 https://txwrap.my.id/health | tee /dev/stderr | grep -q '"service":"walletlens"'
 
           echo "mcp tools/list stays free:"
           code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \

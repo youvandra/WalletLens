@@ -7,30 +7,33 @@
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
-    :root { --ink:#0a0a0a; }
+    :root { --bg:#000; --panel:#0d0d0d; --line:#262626; --line2:#3a3a3a; --txt:#ffffff; --sub:#929292; --dim:#6a6a6a; }
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'Inter',sans-serif; background:#EDE7DB; color:var(--ink); -webkit-font-smoothing:antialiased;
-      background-image:radial-gradient(var(--ink) 1px, transparent 1px); background-size:22px 22px; }
-    .display { font-family:'Archivo Black',sans-serif; letter-spacing:-.02em; line-height:.92; }
-    .mono { font-family:'Space Mono',monospace; }
-    .frame { border:5px solid var(--ink); box-shadow:16px 16px 0 var(--ink); }
-    .card { background:#fff; color:var(--ink); border:3px solid var(--ink); box-shadow:6px 6px 0 var(--ink); }
-    .badge { display:inline-block; background:var(--ink); color:#fff; font-weight:900; text-transform:uppercase;
-      letter-spacing:.08em; padding:6px 14px; transform:rotate(-3deg); border:3px solid var(--ink); }
-    .btn { border:3px solid var(--ink); box-shadow:5px 5px 0 var(--ink); font-weight:900; text-transform:uppercase;
-      letter-spacing:.06em; transition:transform .06s, box-shadow .06s; cursor:pointer; }
-    .btn:hover { transform:translate(-1px,-1px); box-shadow:6px 6px 0 var(--ink); }
-    .btn:active { transform:translate(4px,4px); box-shadow:1px 1px 0 var(--ink); }
-    .btn:disabled { opacity:.35; box-shadow:none; transform:none; cursor:not-allowed; }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--txt); -webkit-font-smoothing:antialiased; }
+    .display { font-weight:800; letter-spacing:-.035em; line-height:1.02; }
+    .mono { font-family:'IBM Plex Mono',monospace; }
+
+    .card { background:var(--panel); color:var(--txt); border:1px solid var(--line); border-radius:16px; transition:border-color .15s; }
+    .card:hover { border-color:var(--line2); }
+    .badge { display:inline-block; background:#fff; color:#000; font-weight:700; font-size:12px;
+      letter-spacing:.02em; padding:7px 16px; border-radius:100px; }
+    .btn { border:1px solid var(--line); border-radius:100px; font-weight:600; letter-spacing:.01em;
+      transition:background .15s, border-color .15s, opacity .15s; cursor:pointer; background:var(--panel); color:var(--txt); }
+    .btn:hover { border-color:var(--line2); background:#161616; }
+    .btn:active { background:#1d1d1d; }
+    .btn:disabled { opacity:.3; cursor:not-allowed; }
+    .btn-primary { background:#fff; color:#000; border-color:#fff; }
+    .btn-primary:hover { background:#e6e6e6; border-color:#e6e6e6; }
+
     /* staggered reveal */
-    @keyframes pop { from { opacity:0; transform:translateY(20px) scale(.95) rotate(-1.2deg); } to { opacity:1; transform:none; } }
+    @keyframes pop { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
     .reveal .pop { opacity:0; }
-    .reveal.run .pop { animation:pop .52s cubic-bezier(.2,.9,.2,1) both; }
+    .reveal.run .pop { animation:pop .5s cubic-bezier(.2,.8,.2,1) both; }
     .reveal.run .pop:nth-child(1){animation-delay:.04s}
     .reveal.run .pop:nth-child(2){animation-delay:.10s}
     .reveal.run .pop:nth-child(3){animation-delay:.16s}
@@ -39,47 +42,52 @@
     .reveal.run .pop:nth-child(6){animation-delay:.34s}
     .reveal.run .pop:nth-child(7){animation-delay:.40s}
     /* score bars */
-    .bar-track { background:rgba(0,0,0,.10); border:3px solid var(--ink); height:30px; overflow:hidden; }
-    .bar-fill { height:100%; width:0; transition:width 1s cubic-bezier(.2,.9,.2,1); }
-    /* decorative theme backgrounds (behind content, html2canvas-safe shapes) */
-    .deco { position:absolute; inset:0; pointer-events:none; overflow:hidden; color:rgba(0,0,0,.07); z-index:0; }
-    .deco.inkw { color:rgba(255,255,255,.12); }
+    .bar-track { background:rgba(255,255,255,.08); border-radius:100px; height:10px; overflow:hidden; }
+    .bar-fill { height:100%; width:0; border-radius:100px; transition:width 1s cubic-bezier(.2,.8,.2,1); }
+    /* decorative pixel-grid backgrounds (OKX block motif; html2canvas-safe) */
+    .deco { position:absolute; inset:0; pointer-events:none; overflow:hidden; color:rgba(255,255,255,.05); z-index:0; }
+    .deco.inkd { color:rgba(0,0,0,.06); }
     .deco::before, .deco::after { content:""; position:absolute; }
-    .deco-0::before { width:340px; height:340px; border:26px solid currentColor; border-radius:50%; top:-120px; right:-120px; }
-    .deco-0::after { width:180px; height:180px; border:18px solid currentColor; border-radius:50%; bottom:-60px; left:-60px; }
-    .deco-1::before { inset:0; background:repeating-linear-gradient(-45deg, currentColor 0 3px, transparent 3px 28px); }
-    .deco-2::before { inset:0; background:radial-gradient(currentColor 2.5px, transparent 3px); background-size:28px 28px; }
-    .deco-3::before { width:260px; height:260px; border:20px solid currentColor; transform:rotate(12deg); top:-90px; left:-90px; }
-    .deco-3::after { width:150px; height:150px; border:14px solid currentColor; transform:rotate(-18deg); bottom:-50px; right:-40px; }
-    .deco-4::before { inset:0; background:repeating-linear-gradient(0deg, currentColor 0 3px, transparent 3px 32px); }
-    .deco-5::before { width:240px; height:34px; background:currentColor; top:64px; right:-70px; transform:rotate(-8deg); }
-    .deco-5::after { width:240px; height:34px; background:currentColor; bottom:84px; left:-80px; transform:rotate(6deg); }
-    .deco-6::before { width:300px; height:300px; border:22px solid currentColor; border-radius:50%; top:-110px; left:-110px; }
-    .deco-6::after { width:160px; height:160px; border:14px solid currentColor; border-radius:50%; bottom:-50px; right:-50px; }
-    .deco-7::before { inset:0; background:repeating-linear-gradient(90deg, currentColor 0 22px, transparent 22px 64px); opacity:.35; }
-    .deco-8::before { inset:0; background:repeating-linear-gradient(45deg, currentColor 0 3px, transparent 3px 36px); }
+    .deco-0::before { width:420px; height:420px; top:-140px; right:-140px;
+      background:conic-gradient(currentColor 0 25%, transparent 0 50%, currentColor 0 75%, transparent 0);
+      background-size:64px 64px; }
+    .deco-1::before { inset:0; background:radial-gradient(currentColor 1.5px, transparent 2px); background-size:32px 32px; }
+    .deco-2::before { width:340px; height:340px; bottom:-120px; left:-120px;
+      background:conic-gradient(currentColor 0 25%, transparent 0 50%, currentColor 0 75%, transparent 0);
+      background-size:56px 56px; }
+    .deco-3::before { inset:0; background:repeating-linear-gradient(0deg, currentColor 0 1px, transparent 1px 56px),
+      repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 56px); }
+    .deco-4::before { inset:0; background:radial-gradient(currentColor 1.5px, transparent 2px); background-size:28px 28px; }
+    .deco-5::before { width:300px; height:300px; top:-100px; left:-100px;
+      background:conic-gradient(currentColor 0 25%, transparent 0 50%, currentColor 0 75%, transparent 0);
+      background-size:50px 50px; }
+    .deco-6::before { inset:0; background:repeating-linear-gradient(0deg, currentColor 0 1px, transparent 1px 56px),
+      repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 56px); }
+    .deco-7::before { inset:0; background:radial-gradient(currentColor 1.5px, transparent 2px); background-size:32px 32px; }
+    .deco-8::before { width:380px; height:380px; top:-130px; right:-130px;
+      background:conic-gradient(currentColor 0 25%, transparent 0 50%, currentColor 0 75%, transparent 0);
+      background-size:60px 60px; }
     /* marquee */
-    .marquee { overflow:hidden; white-space:nowrap; border-top:3px solid var(--ink); border-bottom:3px solid var(--ink); }
-    .marquee > span { display:inline-block; animation:scroll 14s linear infinite; font-weight:900; text-transform:uppercase; letter-spacing:.1em; }
+    .marquee { overflow:hidden; white-space:nowrap; border-top:1px solid var(--line); }
+    .marquee > span { display:inline-block; animation:scroll 26s linear infinite; font-weight:600; font-size:12px;
+      letter-spacing:.22em; text-transform:uppercase; }
     @keyframes scroll { from { transform:translateX(0); } to { transform:translateX(-50%); } }
     @keyframes spin { to { transform:rotate(360deg); } }
     .spin { animation:spin .9s linear infinite; }
-    @keyframes float { 0%,100%{transform:rotate(-3deg) translateY(0)} 50%{transform:rotate(-3deg) translateY(-6px)} }
-    .float { animation:float 3s ease-in-out infinite; }
 
     /* ---- landing page ---- */
-    .sec { border-bottom:5px solid var(--ink); padding:96px 24px; position:relative; overflow:hidden; }
+    .sec { border-bottom:1px solid var(--line); padding:110px 24px; position:relative; overflow:hidden; }
     .wrapx { max-width:1080px; margin:0 auto; position:relative; z-index:1; }
-    .eyebrow { display:inline-block; background:var(--ink); color:#fff; font-family:'Space Mono',monospace;
-      font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.2em; padding:7px 14px;
-      border:3px solid var(--ink); transform:rotate(-1.5deg); margin-bottom:28px; }
-    .h2 { font-family:'Archivo Black',sans-serif; letter-spacing:-.03em; line-height:.94;
-      font-size:clamp(2.2rem,6.5vw,4.4rem); margin-bottom:20px; }
-    .lede { font-size:clamp(1rem,2vw,1.25rem); font-weight:600; max-width:60ch; line-height:1.5; }
+    .eyebrow { display:inline-block; font-family:'IBM Plex Mono',monospace; color:var(--sub);
+      font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:.24em; margin-bottom:26px; }
+    .h2 { font-weight:800; letter-spacing:-.035em; line-height:1.04;
+      font-size:clamp(2.1rem,5.6vw,3.9rem); margin-bottom:22px; }
+    .lede { font-size:clamp(1rem,1.9vw,1.2rem); font-weight:500; max-width:62ch; line-height:1.65; color:var(--sub); }
+    .lede code, .lede strong { color:var(--txt); }
 
     /* scroll reveal */
-    .rv { opacity:0; transform:translateY(34px) rotate(-.6deg); }
-    .rv.seen { animation:rvin .62s cubic-bezier(.2,.9,.2,1) both; }
+    .rv { opacity:0; transform:translateY(26px); }
+    .rv.seen { animation:rvin .6s cubic-bezier(.2,.8,.2,1) both; }
     @keyframes rvin { to { opacity:1; transform:none; } }
     .rv.seen:nth-child(2){animation-delay:.06s}
     .rv.seen:nth-child(3){animation-delay:.12s}
@@ -88,35 +96,27 @@
     .rv.seen:nth-child(6){animation-delay:.30s}
 
     /* big cta */
-    .cta { display:inline-flex; align-items:center; gap:14px; background:#FF5C00; color:#fff;
-      font-family:'Archivo Black',sans-serif; font-size:clamp(1.1rem,2.6vw,1.7rem);
-      padding:22px 40px; border:5px solid var(--ink); box-shadow:12px 12px 0 var(--ink);
-      text-decoration:none; transition:transform .08s, box-shadow .08s; }
-    .cta:hover { transform:translate(-3px,-3px); box-shadow:15px 15px 0 var(--ink); }
-    .cta:active { transform:translate(6px,6px); box-shadow:2px 2px 0 var(--ink); }
-
-    /* ticker */
-    .tick { background:var(--ink); color:#FFD400; overflow:hidden; white-space:nowrap;
-      border-top:5px solid var(--ink); border-bottom:5px solid var(--ink); }
-    .tick span { display:inline-block; padding:14px 0; font-family:'Archivo Black',sans-serif;
-      font-size:20px; letter-spacing:.06em; animation:scroll 22s linear infinite; }
+    .cta { display:inline-flex; align-items:center; gap:12px; background:#fff; color:#000;
+      font-weight:700; font-size:clamp(1rem,2vw,1.15rem); letter-spacing:-.01em;
+      padding:18px 36px; border-radius:100px; text-decoration:none; transition:background .15s, transform .15s; }
+    .cta:hover { background:#e6e6e6; transform:translateY(-1px); }
+    .cta:active { transform:translateY(0); }
 
     /* signal chip grid */
-    .sig { border:3px solid var(--ink); background:#fff; box-shadow:5px 5px 0 var(--ink);
-      padding:14px 16px; transition:transform .1s; }
-    .sig:hover { transform:translate(-2px,-2px) rotate(-1deg); box-shadow:8px 8px 0 var(--ink); }
-    .sig code { font-family:'Space Mono',monospace; font-weight:700; font-size:13px; }
+    .sig { border:1px solid var(--line); background:var(--panel); border-radius:12px;
+      padding:14px 16px; transition:border-color .15s; }
+    .sig:hover { border-color:var(--line2); }
+    .sig code { font-family:'IBM Plex Mono',monospace; font-weight:500; font-size:13px; color:var(--txt); }
 
     /* code block */
-    .codeblk { background:var(--ink); color:#C6FF00; border:4px solid var(--ink);
-      box-shadow:9px 9px 0 rgba(0,0,0,.25); font-family:'Space Mono',monospace; font-size:12.5px;
-      line-height:1.65; padding:22px; overflow-x:auto; white-space:pre; }
-    .codeblk .k { color:#FF2D8B; } .codeblk .s { color:#FFD400; } .codeblk .c { color:#8a8a8a; }
+    .codeblk { background:var(--panel); color:#e5e5e5; border:1px solid var(--line); border-radius:16px;
+      font-family:'IBM Plex Mono',monospace; font-size:12.5px;
+      line-height:1.7; padding:24px; overflow-x:auto; white-space:pre; }
+    .codeblk .k { color:#929292; } .codeblk .s { color:#ffffff; } .codeblk .c { color:#5a5a5a; }
 
     /* step rail */
-    .step { display:flex; gap:20px; align-items:flex-start; }
-    .step .n { font-family:'Archivo Black',sans-serif; font-size:2.4rem; line-height:1;
-      -webkit-text-stroke:2px var(--ink); color:transparent; flex-shrink:0; width:64px; }
+    .step { display:flex; gap:22px; align-items:flex-start; border-top:1px solid var(--line); padding-top:26px; }
+    .step .n { font-family:'IBM Plex Mono',monospace; font-size:.85rem; color:var(--dim); flex-shrink:0; width:52px; padding-top:6px; }
   </style>
 </head>
 <body>
@@ -125,8 +125,8 @@
     <!-- ===== LOADING ===== -->
     <template x-if="loading">
       <div class="flex flex-col items-center gap-6">
-        <div class="w-16 h-16 border-[5px] border-[var(--ink)] border-t-[#FF2D8B] spin"></div>
-        <p class="mono uppercase text-sm tracking-widest font-bold">Wrapping your wallet...</p>
+        <div class="w-14 h-14 rounded-full border-2 border-[#262626] border-t-white spin"></div>
+        <p class="mono uppercase text-xs tracking-[.24em] text-[#929292]">Wrapping your wallet...</p>
       </div>
     </template>
 
@@ -135,99 +135,99 @@
       <div x-init="initReveal()">
 
         <!-- 1 · HERO -->
-        <section class="sec" style="background:#FFD400;padding-top:72px">
+        <section class="sec" style="padding-top:120px">
           <div class="deco deco-0"></div>
           <div class="wrapx flex flex-col items-center text-center">
-            <div class="badge float text-sm rv">On-chain wallet intelligence for agents</div>
-            <h1 class="display rv" style="font-size:clamp(3.5rem,16vw,10rem);margin:10px 0">Wallet<span style="color:#FF2D8B">Lens</span></h1>
-            <p class="lede rv" style="margin-bottom:34px">
+            <div class="eyebrow rv">On-chain wallet intelligence for agents</div>
+            <h1 class="display rv" style="font-size:clamp(3.4rem,11vw,7.5rem);margin:6px 0 22px">WalletLens</h1>
+            <p class="lede rv" style="margin-bottom:38px">
               Your agent keeps hitting addresses it knows nothing about.
-              WalletLens answers <em>“who is this wallet, and should I act on it?”</em>
+              WalletLens answers <em style="color:#fff">“who is this wallet, and should I act on it?”</em>
               — as structured data it can compose, not a webpage it has to scrape.
             </p>
             <a href="https://www.okx.ai/agents/4938" target="_blank" rel="noopener" class="cta rv">
               Try WalletLens on OKX.AI <span>→</span>
             </a>
-            <button @click="scrollToWrap()" class="rv mono text-xs uppercase tracking-widest font-bold underline underline-offset-4 hover:text-[#FF2D8B]" style="margin-top:22px">
+            <button @click="scrollToWrap()" class="rv mono text-xs uppercase tracking-[.2em] text-[#929292] hover:text-white transition-colors" style="margin-top:24px">
               or wrap your own wallet ↓
             </button>
-            <div class="rv mono text-[11px] uppercase tracking-widest font-bold opacity-60" style="margin-top:14px">
+            <div class="rv mono text-[11px] uppercase tracking-[.2em] text-[#6a6a6a]" style="margin-top:16px">
               Agent&nbsp;ID&nbsp;#4938 · X&nbsp;Layer · 0.05 USDT0 per call
             </div>
 
             <!-- live usage counters (real, from /api/stats) -->
-            <div x-show="statsReady" x-transition.duration.500ms class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full" style="max-width:720px;margin-top:44px">
-              <div class="card p-4 -rotate-1">
-                <p class="display" style="font-size:2rem;color:#2B4BFF" x-text="ds.agentCalls.toLocaleString()"></p>
-                <p class="mono text-[10px] uppercase tracking-widest font-bold opacity-60 mt-1">Tool calls by agents</p>
+            <div x-show="statsReady" x-transition.duration.500ms class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full" style="max-width:720px;margin-top:52px">
+              <div class="card p-5">
+                <p class="display" style="font-size:2rem" x-text="ds.agentCalls.toLocaleString()"></p>
+                <p class="mono text-[10px] uppercase tracking-[.18em] text-[#6a6a6a] mt-2">Tool calls by agents</p>
               </div>
-              <div class="card p-4 rotate-1">
-                <p class="display" style="font-size:2rem;color:#FF2D8B" x-text="ds.wraps.toLocaleString()"></p>
-                <p class="mono text-[10px] uppercase tracking-widest font-bold opacity-60 mt-1">Wallets wrapped by people</p>
+              <div class="card p-5">
+                <p class="display" style="font-size:2rem" x-text="ds.wraps.toLocaleString()"></p>
+                <p class="mono text-[10px] uppercase tracking-[.18em] text-[#6a6a6a] mt-2">Wallets wrapped by people</p>
               </div>
-              <div class="card p-4 -rotate-1">
-                <p class="display" style="font-size:2rem;color:#00A676" x-text="ds.uniqueWallets.toLocaleString()"></p>
-                <p class="mono text-[10px] uppercase tracking-widest font-bold opacity-60 mt-1">Unique addresses profiled</p>
+              <div class="card p-5">
+                <p class="display" style="font-size:2rem" x-text="ds.uniqueWallets.toLocaleString()"></p>
+                <p class="mono text-[10px] uppercase tracking-[.18em] text-[#6a6a6a] mt-2">Unique addresses profiled</p>
               </div>
             </div>
           </div>
         </section>
 
         <!-- ticker -->
-        <div class="tick">
-          <span>SCREEN COUNTERPARTIES · DETECT SYBILS · RANK WALLETS · PROFILE ANY ADDRESS · SCREEN COUNTERPARTIES · DETECT SYBILS · RANK WALLETS · PROFILE ANY ADDRESS · </span><span>SCREEN COUNTERPARTIES · DETECT SYBILS · RANK WALLETS · PROFILE ANY ADDRESS · SCREEN COUNTERPARTIES · DETECT SYBILS · RANK WALLETS · PROFILE ANY ADDRESS · </span>
+        <div class="marquee text-[#6a6a6a]">
+          <span>SCREEN COUNTERPARTIES · DETECT SYBILS · RANK WALLETS · PROFILE ANY ADDRESS · SCREEN COUNTERPARTIES · DETECT SYBILS · RANK WALLETS · PROFILE ANY ADDRESS ·&nbsp;</span><span>SCREEN COUNTERPARTIES · DETECT SYBILS · RANK WALLETS · PROFILE ANY ADDRESS · SCREEN COUNTERPARTIES · DETECT SYBILS · RANK WALLETS · PROFILE ANY ADDRESS ·&nbsp;</span>
         </div>
 
         <!-- 2 · PROBLEM -->
-        <section class="sec" style="background:#FF2D8B">
+        <section class="sec">
           <div class="deco deco-1"></div>
           <div class="wrapx">
             <div class="eyebrow rv">The problem</div>
-            <h2 class="h2 rv">AN ADDRESS IS<br>JUST 42 CHARACTERS.</h2>
-            <p class="lede rv" style="margin-bottom:36px">
+            <h2 class="h2 rv">An address is<br>just 42 characters.</h2>
+            <p class="lede rv" style="margin-bottom:40px">
               An autonomous agent about to send funds, drop an airdrop, or trust a counterparty
               sees <code class="mono">0x8f3a…7f80</code> and nothing else. Block explorers are built
               for humans with eyes. Agents need a verdict they can justify.
             </p>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="card rv p-5 -rotate-1"><p class="display text-2xl mb-1">Is it a bot?</p><p class="text-sm font-bold opacity-70">Timing regularity, volume, night-hour skew.</p></div>
-              <div class="card rv p-5 rotate-1"><p class="display text-2xl mb-1">Is it farming?</p><p class="text-sm font-bold opacity-70">Dust patterns, approval spam, wallet age.</p></div>
-              <div class="card rv p-5 -rotate-1"><p class="display text-2xl mb-1">Is it real?</p><p class="text-sm font-bold opacity-70">Portfolio, net worth, cross-chain history.</p></div>
+              <div class="card rv p-6"><p class="display text-xl mb-2">Is it a bot?</p><p class="text-sm text-[#929292] leading-relaxed">Timing regularity, volume, night-hour skew.</p></div>
+              <div class="card rv p-6"><p class="display text-xl mb-2">Is it farming?</p><p class="text-sm text-[#929292] leading-relaxed">Dust patterns, approval spam, wallet age.</p></div>
+              <div class="card rv p-6"><p class="display text-xl mb-2">Is it real?</p><p class="text-sm text-[#929292] leading-relaxed">Portfolio, net worth, cross-chain history.</p></div>
             </div>
           </div>
         </section>
 
         <!-- 3 · WHAT YOU GET -->
-        <section class="sec" style="background:#2B4BFF;color:#fff">
-          <div class="deco deco-6 inkw"></div>
+        <section class="sec">
+          <div class="deco deco-2"></div>
           <div class="wrapx">
-            <div class="eyebrow rv" style="background:#fff;color:var(--ink)">What comes back</div>
-            <h2 class="h2 rv">14 SIGNALS.<br>ONE VERDICT.<br>ALWAYS WITH EVIDENCE.</h2>
-            <p class="lede rv" style="margin-bottom:40px">
+            <div class="eyebrow rv">What comes back</div>
+            <h2 class="h2 rv">14 signals. One verdict.<br>Always with evidence.</h2>
+            <p class="lede rv" style="margin-bottom:44px">
               Every result carries <code class="mono">archetypeConfidence</code> and an
               <code class="mono">evidence</code> block — how many transactions were analyzed,
               the window, and an explicit caveat. Never a black box.
             </p>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
               <template x-for="s in signalList" :key="s">
-                <div class="sig rv text-[#0a0a0a]"><code x-text="s"></code></div>
+                <div class="sig rv"><code x-text="s"></code></div>
               </template>
             </div>
           </div>
         </section>
 
         <!-- 4 · TOOLS -->
-        <section class="sec" style="background:#C6FF00">
-          <div class="deco deco-8"></div>
+        <section class="sec">
+          <div class="deco deco-3"></div>
           <div class="wrapx">
             <div class="eyebrow rv">Eleven MCP tools</div>
-            <h2 class="h2 rv">CALL IT LIKE<br>ANY OTHER TOOL.</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" style="margin-top:36px">
+            <h2 class="h2 rv">Call it like<br>any other tool.</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" style="margin-top:40px">
               <template x-for="t in tools" :key="t.name">
-                <div class="card rv p-6" :class="t.tilt">
-                  <p class="mono text-sm font-bold" :style="`color:${t.hex}`" x-text="t.name + '()'"></p>
-                  <p class="display text-xl mt-1 mb-2" x-text="t.title"></p>
-                  <p class="text-sm font-bold opacity-70 leading-snug" x-text="t.desc"></p>
+                <div class="card rv p-6">
+                  <p class="mono text-sm text-[#929292]" x-text="t.name + '()'"></p>
+                  <p class="display text-lg mt-2 mb-2" x-text="t.title"></p>
+                  <p class="text-sm text-[#929292] leading-relaxed" x-text="t.desc"></p>
                 </div>
               </template>
             </div>
@@ -235,16 +235,17 @@
         </section>
 
         <!-- 5 · PRICING -->
-        <section class="sec" style="background:#FF5C00">
+        <section class="sec">
           <div class="deco deco-4"></div>
           <div class="wrapx">
             <div class="eyebrow rv">Pay per call · x402 v2</div>
-            <h2 class="h2 rv">0.05 USDT0.<br>NO KEY. NO GAS.</h2>
-            <p class="lede rv" style="margin-bottom:32px">
-              Discovery is free forever — <code class="mono">initialize</code> and
-              <code class="mono">tools/list</code> never cost a cent. Each IP gets 20 free calls a day.
-              Past that, the server answers <strong>HTTP&nbsp;402</strong> and the OKX facilitator
-              settles the transfer on-chain. This server never touches a private key.
+            <h2 class="h2 rv">0.05 USDT0.<br>No key. No gas.</h2>
+            <p class="lede rv" style="margin-bottom:36px">
+              Discovery is free forever — <code class="mono">initialize</code>,
+              <code class="mono">tools/list</code>, and <code class="mono">get_quota</code> never cost
+              a cent, so any agent can connect and budget before it spends. Every result is paid:
+              the server answers <strong>HTTP&nbsp;402</strong> and the OKX facilitator settles
+              0.05&nbsp;USDT0 on-chain. This server never touches a private key.
             </p>
             <div class="codeblk rv"><span class="c">// decoded PAYMENT-REQUIRED header</span>
 {
@@ -260,18 +261,18 @@
         </section>
 
         <!-- 6 · HOW IT WORKS -->
-        <section class="sec" style="background:#8B3DFF;color:#fff">
-          <div class="deco deco-3 inkw"></div>
+        <section class="sec">
+          <div class="deco deco-5"></div>
           <div class="wrapx">
-            <div class="eyebrow rv" style="background:#fff;color:var(--ink)">Under the hood</div>
-            <h2 class="h2 rv">SEVEN FETCHES.<br>ZERO GUESSES.</h2>
-            <div class="flex flex-col gap-7" style="margin-top:40px">
+            <div class="eyebrow rv">Under the hood</div>
+            <h2 class="h2 rv">Seven fetches.<br>Zero guesses.</h2>
+            <div class="flex flex-col gap-6" style="margin-top:44px">
               <template x-for="(st,i) in steps" :key="i">
                 <div class="step rv">
-                  <div class="n" style="-webkit-text-stroke:2px #fff" x-text="'0'+(i+1)"></div>
+                  <div class="n" x-text="'0'+(i+1)"></div>
                   <div>
-                    <p class="display text-2xl mb-1" x-text="st.t"></p>
-                    <p class="text-sm font-bold opacity-80 leading-relaxed max-w-[62ch]" x-text="st.d"></p>
+                    <p class="display text-xl mb-2" x-text="st.t"></p>
+                    <p class="text-sm text-[#929292] leading-relaxed max-w-[68ch]" x-text="st.d"></p>
                   </div>
                 </div>
               </template>
@@ -280,16 +281,16 @@
         </section>
 
         <!-- 7 · HONESTY -->
-        <section class="sec" style="background:#12E4B6">
-          <div class="deco deco-2"></div>
+        <section class="sec">
+          <div class="deco deco-6"></div>
           <div class="wrapx">
             <div class="eyebrow rv">Things we refuse to do</div>
-            <h2 class="h2 rv">AGENTS ACT ON THIS.<br>SO WE DON'T LIE.</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" style="margin-top:32px">
+            <h2 class="h2 rv">Agents act on this.<br>So we don't lie.</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" style="margin-top:36px">
               <template x-for="h in honesty" :key="h.t">
-                <div class="card rv p-5">
-                  <p class="display text-lg mb-1" x-text="h.t"></p>
-                  <p class="text-sm font-bold opacity-70 leading-snug" x-text="h.d"></p>
+                <div class="card rv p-6">
+                  <p class="display text-lg mb-2" x-text="h.t"></p>
+                  <p class="text-sm text-[#929292] leading-relaxed" x-text="h.d"></p>
                 </div>
               </template>
             </div>
@@ -297,37 +298,37 @@
         </section>
 
         <!-- 8 · HUMAN LAYER -->
-        <section id="wrap" class="sec" style="background:#EDE7DB">
+        <section id="wrap" class="sec">
           <div class="deco deco-7"></div>
           <div class="wrapx text-center">
             <div class="eyebrow rv">Bonus layer</div>
-            <h2 class="h2 rv">AND YES —<br>IT ROASTS YOU.</h2>
-            <p class="lede rv" style="margin:0 auto 32px">
+            <h2 class="h2 rv">And yes —<br>it roasts you.</h2>
+            <p class="lede rv" style="margin:0 auto 36px">
               Ask for <code class="mono">roast: true</code> and the agent gets a shareable “Wrapped”
               slideshow to hand back to its human. Archetype, scores, portfolio, and a verdict
               nobody asked for.
             </p>
 
-            <div class="rv flex w-full frame bg-white" style="max-width:560px;margin:0 auto">
+            <div class="rv flex w-full card overflow-hidden" style="max-width:560px;margin:0 auto;padding:6px;border-radius:100px">
               <input type="text" x-model="address" @keydown.enter="wrap()" placeholder="0x..."
-                     class="flex-1 px-5 py-5 border-none outline-none text-base mono bg-white text-[var(--ink)]">
-              <button @click="wrap()" class="px-8 py-5 bg-[#FF5C00] text-white display text-lg border-l-[5px] border-[var(--ink)] hover:bg-[#e85218] active:translate-x-[2px]">WRAP</button>
+                     class="flex-1 px-5 py-4 border-none outline-none text-base mono bg-transparent text-white placeholder-[#6a6a6a]">
+              <button @click="wrap()" class="btn-primary px-8 rounded-full font-bold text-sm" style="border:none;cursor:pointer">Wrap</button>
             </div>
-            <button @click="loadSample()" class="rv mono text-xs uppercase tracking-widest font-bold underline underline-offset-4 hover:text-[#FF2D8B]" style="margin-top:20px">
+            <button @click="loadSample()" class="rv mono text-xs uppercase tracking-[.2em] text-[#929292] hover:text-white transition-colors" style="margin-top:22px">
               or see a sample wrap
             </button>
           </div>
         </section>
 
         <!-- 9 · FINAL CTA -->
-        <section class="sec" style="background:#FFD400;border-bottom:none">
-          <div class="deco deco-0"></div>
+        <section class="sec" style="border-bottom:none">
+          <div class="deco deco-8"></div>
           <div class="wrapx flex flex-col items-center text-center">
-            <h2 class="h2 rv" style="font-size:clamp(2.4rem,8vw,5.5rem)">GIVE YOUR AGENT<br>A SECOND OPINION.</h2>
-            <a href="https://www.okx.ai/agents/4938" target="_blank" rel="noopener" class="cta rv" style="margin-top:20px">
+            <h2 class="h2 rv" style="font-size:clamp(2.4rem,6.5vw,4.6rem)">Give your agent<br>a second opinion.</h2>
+            <a href="https://www.okx.ai/agents/4938" target="_blank" rel="noopener" class="cta rv" style="margin-top:24px">
               Try WalletLens on OKX.AI <span>→</span>
             </a>
-            <div class="rv mono text-[11px] uppercase tracking-widest font-bold opacity-60" style="margin-top:26px">
+            <div class="rv mono text-[11px] uppercase tracking-[.2em] text-[#6a6a6a]" style="margin-top:28px">
               MCP endpoint · txwrap.my.id/mcp
             </div>
           </div>
@@ -340,17 +341,18 @@
     <template x-if="wrapped && !loading">
       <div class="min-h-screen flex flex-col items-center justify-center px-4 py-8 gap-5">
 
-        <div id="card" class="frame w-full max-w-[560px] relative overflow-hidden"
-             :style="`background:${themes[slide].bg};color:${themes[slide].ink};transition:background .45s ease`"
+        <div id="card" class="w-full max-w-[560px] relative overflow-hidden"
+             style="border:1px solid #262626;border-radius:24px"
+             :style="`background:${themes[slide].bg};color:${themes[slide].ink};transition:background .45s ease;border:1px solid ${themes[slide].ink==='#ffffff'?'#262626':'#d9d9d9'};border-radius:24px`"
              @touchstart="touchStart($event)" @touchend="touchEnd($event)">
 
           <!-- decorative theme background -->
-          <div class="deco" :class="['deco-'+slide, themes[slide].ink==='#ffffff' ? 'inkw' : '']"></div>
+          <div class="deco" :class="['deco-'+slide, themes[slide].ink==='#ffffff' ? '' : 'inkd']"></div>
 
           <!-- progress ticks -->
           <div class="relative z-[1] flex gap-1.5 px-6 pt-6">
             <template x-for="n in totalSlides" :key="n">
-              <div class="h-2 flex-1 border-2 border-[var(--ink)] cursor-pointer" :style="`background:${(n-1)<=slide ? 'var(--ink)':'transparent'}`" @click="go(n-1)"></div>
+              <div class="h-1 flex-1 rounded-full cursor-pointer" :style="`background:${(n-1)<=slide ? themes[slide].ink : (themes[slide].ink==='#ffffff' ? 'rgba(255,255,255,.15)' : 'rgba(0,0,0,.12)')}`" @click="go(n-1)"></div>
             </template>
           </div>
 
@@ -359,72 +361,72 @@
             <!-- 0: COVER -->
             <div x-show="slide===0" class="reveal" :class="slide===0&&'run'">
               <div class="flex flex-col items-center text-center gap-5">
-                <div class="badge pop text-xs">Your <span x-text="year"></span> Wallet Wrapped</div>
-                <h2 class="display pop" style="font-size:clamp(3rem,13vw,5.5rem)">YOUR YEAR<br><span class="hollow" :style="`-webkit-text-stroke:2px ${themes[slide].ink}`" style="color:transparent">ONCHAIN</span></h2>
-                <div class="card pop mono px-4 py-2 text-sm break-all" x-text="shortAddr(data.address)"></div>
-                <p class="pop mono text-xs uppercase tracking-widest font-bold opacity-70">X Layer · powered by WalletLens</p>
+                <div class="badge pop" :style="`background:${themes[slide].ink};color:${themes[slide].bg}`">Your <span x-text="year"></span> Wallet Wrapped</div>
+                <h2 class="display pop" style="font-size:clamp(2.8rem,12vw,4.8rem)">YOUR YEAR<br>ONCHAIN</h2>
+                <div class="pop mono px-4 py-2 text-sm break-all rounded-full" :style="`border:1px solid ${themes[slide].ink==='#ffffff'?'#262626':'#d9d9d9'}`" x-text="shortAddr(data.address)"></div>
+                <p class="pop mono text-[11px] uppercase tracking-[.2em] opacity-60">X Layer · powered by WalletLens</p>
               </div>
             </div>
 
             <!-- 1: ARCHETYPE -->
             <div x-show="slide===1" class="reveal" :class="slide===1&&'run'">
-              <div class="flex items-center gap-3 flex-wrap mb-6">
-                <div class="badge pop text-xs">Your Wallet Archetype</div>
-                <div class="badge pop text-xs" style="background:#fff;color:var(--ink);transform:rotate(3deg)" x-text="data.metrics.rarity + ' Rank'"></div>
-                <div class="badge pop text-xs" x-show="data.metrics.percentile" style="background:#0a0a0a;color:#fff;transform:rotate(-2deg)" x-text="'Top ' + (data.metrics.percentile?.topPercent ?? '') + '%'"></div>
+              <div class="flex items-center gap-2 flex-wrap mb-6">
+                <div class="badge pop" :style="`background:${themes[slide].ink};color:${themes[slide].bg}`">Your Wallet Archetype</div>
+                <div class="badge pop" :style="`background:transparent;color:${themes[slide].ink};border:1px solid currentColor`" x-text="data.metrics.rarity + ' Rank'"></div>
+                <div class="badge pop" x-show="data.metrics.percentile" :style="`background:transparent;color:${themes[slide].ink};border:1px solid currentColor`" x-text="'Top ' + (data.metrics.percentile?.topPercent ?? '') + '%'"></div>
               </div>
-              <h2 class="display pop mb-6" style="font-size:clamp(2.4rem,10vw,4.2rem)" x-text="data.personality.title"></h2>
-              <div class="card pop p-5 text-lg font-bold leading-snug" x-text="data.personality.roast"></div>
+              <h2 class="display pop mb-6" style="font-size:clamp(2.2rem,9vw,3.8rem)" x-text="data.personality.title"></h2>
+              <div class="card pop p-5 text-lg font-semibold leading-snug" :style="`background:transparent;border:1px solid ${themes[slide].ink==='#ffffff'?'#262626':'#d9d9d9'};color:${themes[slide].ink}`" x-text="data.personality.roast"></div>
             </div>
 
             <!-- 2: OVERVIEW -->
             <div x-show="slide===2" class="reveal" :class="slide===2&&'run'">
-              <div class="badge pop text-xs mb-6">The Numbers</div>
+              <div class="badge pop mb-6" :style="`background:${themes[slide].ink};color:${themes[slide].bg}`">The Numbers</div>
               <div class="grid grid-cols-2 gap-3">
-                <div class="card pop p-5"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Balance</p><p class="display" style="font-size:clamp(1.4rem,6vw,2rem);color:#C68A00"><span x-text="data.metrics.balanceEth"></span> <span class="text-sm" x-text="sym"></span></p></div>
-                <div class="card pop p-5"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Transactions</p><p class="display" style="font-size:clamp(1.8rem,7vw,2.6rem);color:#2B4BFF" x-text="disp.totalTx.toLocaleString()"></p></div>
-                <div class="card pop p-5"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Gas Burned</p><p class="display" style="font-size:clamp(1.4rem,6vw,2rem);color:#FF2D8B"><span x-text="data.metrics.gasBurnedEth"></span> <span class="text-sm" x-text="sym"></span></p></div>
-                <div class="card pop p-5"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Swaps</p><p class="display" style="font-size:clamp(1.8rem,7vw,2.6rem);color:#00A676" x-text="disp.swaps.toLocaleString()"></p></div>
+                <div class="card pop p-5" :style="`background:transparent;border:1px solid ${slideBorder}`"><p class="mono text-[10px] uppercase tracking-[.18em] opacity-60 mb-1">Balance</p><p class="display" style="font-size:clamp(1.4rem,6vw,2rem)"><span x-text="data.metrics.balanceEth"></span> <span class="text-sm" x-text="sym"></span></p></div>
+                <div class="card pop p-5" :style="`background:transparent;border:1px solid ${slideBorder}`"><p class="mono text-[10px] uppercase tracking-[.18em] opacity-60 mb-1">Transactions</p><p class="display" style="font-size:clamp(1.8rem,7vw,2.6rem)" x-text="disp.totalTx.toLocaleString()"></p></div>
+                <div class="card pop p-5" :style="`background:transparent;border:1px solid ${slideBorder}`"><p class="mono text-[10px] uppercase tracking-[.18em] opacity-60 mb-1">Gas Burned</p><p class="display" style="font-size:clamp(1.4rem,6vw,2rem)"><span x-text="data.metrics.gasBurnedEth"></span> <span class="text-sm" x-text="sym"></span></p></div>
+                <div class="card pop p-5" :style="`background:transparent;border:1px solid ${slideBorder}`"><p class="mono text-[10px] uppercase tracking-[.18em] opacity-60 mb-1">Swaps</p><p class="display" style="font-size:clamp(1.8rem,7vw,2.6rem)" x-text="disp.swaps.toLocaleString()"></p></div>
               </div>
               <div class="pop grid grid-cols-5 gap-2 mt-3">
                 <template x-for="a in activity" :key="a.label">
-                  <div class="card p-2 text-center"><p class="display text-lg" x-text="a.value"></p><p class="mono text-[9px] uppercase font-bold opacity-60 mt-0.5" x-text="a.label"></p></div>
+                  <div class="card p-2 text-center" :style="`background:transparent;border:1px solid ${slideBorder}`"><p class="display text-lg" x-text="a.value"></p><p class="mono text-[9px] uppercase opacity-60 mt-0.5" x-text="a.label"></p></div>
                 </template>
               </div>
             </div>
 
             <!-- 3: PORTFOLIO -->
             <div x-show="slide===3" class="reveal" :class="slide===3&&'run'">
-              <div class="badge pop text-xs mb-5">The Bag</div>
+              <div class="badge pop mb-5" :style="`background:${themes[slide].ink};color:${themes[slide].bg}`">The Bag</div>
               <div class="pop mb-5">
-                <p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60">Est. Net Worth</p>
-                <p class="display" style="font-size:clamp(2.6rem,11vw,4rem)">$<span x-text="data.metrics.netWorthUsd || '0.00'"></span></p>
+                <p class="mono text-[10px] uppercase tracking-[.18em] opacity-60">Est. Net Worth</p>
+                <p class="display" style="font-size:clamp(2.6rem,11vw,4rem)" :style="`color:${accent}`">$<span x-text="data.metrics.netWorthUsd || '0.00'"></span></p>
               </div>
               <div class="flex flex-col gap-2 mb-4">
                 <template x-for="(h,i) in bag" :key="h.symbol + i">
-                  <div class="card pop px-4 py-3 flex items-center justify-between" :class="i%2 ? 'rotate-[0.6deg]' : '-rotate-[0.6deg]'">
+                  <div class="card pop px-4 py-3 flex items-center justify-between" :style="`background:transparent;border:1px solid ${slideBorder}`">
                     <span class="display text-lg" x-text="h.symbol"></span>
-                    <span class="mono text-xs opacity-70" x-text="h.amount"></span>
-                    <span class="display text-lg" :style="`color:${['#2B4BFF','#FF2D8B','#00A676','#8B3DFF','#C68A00'][i%5]}`" x-text="'$'+h.valueUsd"></span>
+                    <span class="mono text-xs opacity-60" x-text="h.amount"></span>
+                    <span class="display text-lg" x-text="'$'+h.valueUsd"></span>
                   </div>
                 </template>
-                <div x-show="!bag.length" class="card pop px-4 py-3 mono text-sm">No ERC-20 holdings found — pure native energy.</div>
+                <div x-show="!bag.length" class="card pop px-4 py-3 mono text-sm" :style="`background:transparent;border:1px solid ${slideBorder}`">No ERC-20 holdings found — pure native energy.</div>
               </div>
               <div class="pop grid grid-cols-3 gap-2">
-                <div class="card p-2 text-center"><p class="display text-lg" x-text="pf.tokenCount ?? 0"></p><p class="mono text-[9px] uppercase font-bold opacity-60 mt-0.5">Tokens</p></div>
-                <div class="card p-2 text-center"><p class="display text-lg" x-text="pf.nftCount ?? 0"></p><p class="mono text-[9px] uppercase font-bold opacity-60 mt-0.5">NFTs</p></div>
-                <div class="card p-2 text-center"><p class="display text-lg" x-text="'$'+(pf.stablecoinValueUsd ?? 0)"></p><p class="mono text-[9px] uppercase font-bold opacity-60 mt-0.5">Stables</p></div>
+                <div class="card p-2 text-center" :style="`background:transparent;border:1px solid ${slideBorder}`"><p class="display text-lg" x-text="pf.tokenCount ?? 0"></p><p class="mono text-[9px] uppercase opacity-60 mt-0.5">Tokens</p></div>
+                <div class="card p-2 text-center" :style="`background:transparent;border:1px solid ${slideBorder}`"><p class="display text-lg" x-text="pf.nftCount ?? 0"></p><p class="mono text-[9px] uppercase opacity-60 mt-0.5">NFTs</p></div>
+                <div class="card p-2 text-center" :style="`background:transparent;border:1px solid ${slideBorder}`"><p class="display text-lg" x-text="'$'+(pf.stablecoinValueUsd ?? 0)"></p><p class="mono text-[9px] uppercase opacity-60 mt-0.5">Stables</p></div>
               </div>
             </div>
 
             <!-- 4: SCORES -->
             <div x-show="slide===4" class="reveal" :class="slide===4&&'run'">
-              <div class="badge pop text-xs mb-6">Scorecard</div>
-              <div class="flex flex-col gap-4">
+              <div class="badge pop mb-6" :style="`background:${themes[slide].ink};color:${themes[slide].bg}`">Scorecard</div>
+              <div class="flex flex-col gap-5">
                 <template x-for="s in scoreData" :key="s.label">
                   <div class="pop">
-                    <div class="flex justify-between items-end mb-1"><span class="mono text-sm font-bold uppercase" x-text="s.label"></span><span class="display text-2xl" x-text="s.value"></span></div>
-                    <div class="bar-track"><div class="bar-fill" :style="`width:${slide===4 ? s.value : 0}%;background:${s.hex}`"></div></div>
+                    <div class="flex justify-between items-end mb-2"><span class="mono text-xs uppercase tracking-[.14em] opacity-70" x-text="s.label"></span><span class="display text-2xl" x-text="s.value"></span></div>
+                    <div class="bar-track"><div class="bar-fill" :style="`width:${slide===4 ? s.value : 0}%;background:${accent}`"></div></div>
                   </div>
                 </template>
               </div>
@@ -432,12 +434,12 @@
 
             <!-- 5: FUN FACTS -->
             <div x-show="slide===5" class="reveal" :class="slide===5&&'run'">
-              <div class="badge pop text-xs mb-6">Fun Facts</div>
+              <div class="badge pop mb-6" :style="`background:${themes[slide].ink};color:${themes[slide].bg}`">Fun Facts</div>
               <div class="flex flex-col gap-3">
                 <template x-for="(fact,i) in data.personality.funFacts" :key="i">
-                  <div class="card pop p-4 flex gap-3 items-start" :class="i%2? 'rotate-1':'-rotate-1'">
-                    <span class="display text-2xl shrink-0" :style="`color:${['#FF2D8B','#2B4BFF','#00A676'][i%3]}`" x-text="'0'+(i+1)"></span>
-                    <p class="text-sm font-bold leading-snug" x-text="fact"></p>
+                  <div class="card pop p-4 flex gap-4 items-start" :style="`background:transparent;border:1px solid ${slideBorder}`">
+                    <span class="mono text-sm opacity-50 shrink-0 pt-0.5" x-text="'0'+(i+1)"></span>
+                    <p class="text-sm font-semibold leading-relaxed" x-text="fact"></p>
                   </div>
                 </template>
               </div>
@@ -445,76 +447,76 @@
 
             <!-- 6: HABITS -->
             <div x-show="slide===6" class="reveal" :class="slide===6&&'run'">
-              <div class="badge pop text-xs mb-6">Trading Habits</div>
+              <div class="badge pop mb-6" :style="`background:${themes[slide].ink};color:${themes[slide].bg}`">Trading Habits</div>
               <div class="grid grid-cols-2 gap-3 mb-3">
-                <div class="card pop p-4"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Peak Hour</p><p class="display" style="font-size:clamp(1.5rem,5.5vw,2rem);color:#2B4BFF" x-text="peakHourLabel"></p></div>
-                <div class="card pop p-4"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Streak</p><p class="display" style="font-size:clamp(1.5rem,5.5vw,2rem);color:#00A676"><span x-text="data.metrics.activityStreak"></span><span class="text-base"> days</span></p></div>
-                <div class="card pop p-4"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Cross-chain</p><p class="display" style="font-size:clamp(1.5rem,5.5vw,2rem);color:#FF2D8B"><span x-text="data.metrics.crossChain?.total ?? 0"></span><span class="text-base"> hops</span></p></div>
-                <div class="card pop p-4"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Contract Calls</p><p class="display" style="font-size:clamp(1.5rem,5.5vw,2rem);color:#C68A00" x-text="data.metrics.internalTxCount ?? 0"></p></div>
+                <div class="card pop p-4" :style="`background:transparent;border:1px solid ${slideBorder}`"><p class="mono text-[10px] uppercase tracking-[.18em] opacity-60 mb-1">Peak Hour</p><p class="display" style="font-size:clamp(1.5rem,5.5vw,2rem)" x-text="peakHourLabel"></p></div>
+                <div class="card pop p-4" :style="`background:transparent;border:1px solid ${slideBorder}`"><p class="mono text-[10px] uppercase tracking-[.18em] opacity-60 mb-1">Streak</p><p class="display" style="font-size:clamp(1.5rem,5.5vw,2rem)"><span x-text="data.metrics.activityStreak"></span><span class="text-base"> days</span></p></div>
+                <div class="card pop p-4" :style="`background:transparent;border:1px solid ${slideBorder}`"><p class="mono text-[10px] uppercase tracking-[.18em] opacity-60 mb-1">Cross-chain</p><p class="display" style="font-size:clamp(1.5rem,5.5vw,2rem)"><span x-text="data.metrics.crossChain?.total ?? 0"></span><span class="text-base"> hops</span></p></div>
+                <div class="card pop p-4" :style="`background:transparent;border:1px solid ${slideBorder}`"><p class="mono text-[10px] uppercase tracking-[.18em] opacity-60 mb-1">Contract Calls</p><p class="display" style="font-size:clamp(1.5rem,5.5vw,2rem)" x-text="data.metrics.internalTxCount ?? 0"></p></div>
               </div>
-              <div class="card pop p-4 mb-3" x-show="momentum">
-                <p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Momentum</p>
+              <div class="card pop p-4 mb-3" x-show="momentum" :style="`background:transparent;border:1px solid ${slideBorder}`">
+                <p class="mono text-[10px] uppercase tracking-[.18em] opacity-60 mb-1">Momentum</p>
                 <div class="flex items-baseline justify-between gap-2 flex-wrap">
                   <p class="display" style="font-size:clamp(1.3rem,5vw,1.8rem)"><span x-text="momentum?.icon"></span> <span class="capitalize" x-text="momentum?.momentum"></span></p>
-                  <p class="mono text-xs opacity-70"><span x-text="momentum?.tx7d"></span> txs 7d · <span x-text="momentum?.tx30d"></span> txs 30d</p>
+                  <p class="mono text-xs opacity-60"><span x-text="momentum?.tx7d"></span> txs 7d · <span x-text="momentum?.tx30d"></span> txs 30d</p>
                 </div>
               </div>
-              <div class="card pop p-4" x-show="topCps.length">
-                <p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-2">Top Counterparties</p>
+              <div class="card pop p-4" x-show="topCps.length" :style="`background:transparent;border:1px solid ${slideBorder}`">
+                <p class="mono text-[10px] uppercase tracking-[.18em] opacity-60 mb-2">Top Counterparties</p>
                 <template x-for="(c,i) in topCps" :key="c.address">
-                  <div class="flex items-center justify-between gap-2 py-1" :class="i>0 && 'border-t-2 border-[var(--ink)] border-opacity-20'">
+                  <div class="flex items-center justify-between gap-2 py-1.5" :style="i>0 ? `border-top:1px solid ${slideBorder}` : ''">
                     <span class="display text-base" x-text="c.label"></span>
                     <span class="mono text-[10px] opacity-60" x-text="c.txCount + ' tx'"></span>
                   </div>
                 </template>
               </div>
-              <div class="card pop p-4" x-show="!topCps.length"><p class="mono text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">Top Frenemy</p><p class="display text-lg" x-text="data.metrics.topFrenemyLabel"></p><p class="mono text-xs break-all opacity-60 mt-1" x-text="data.metrics.topFrenemy"></p></div>
+              <div class="card pop p-4" x-show="!topCps.length" :style="`background:transparent;border:1px solid ${slideBorder}`"><p class="mono text-[10px] uppercase tracking-[.18em] opacity-60 mb-1">Top Frenemy</p><p class="display text-lg" x-text="data.metrics.topFrenemyLabel"></p><p class="mono text-xs break-all opacity-60 mt-1" x-text="data.metrics.topFrenemy"></p></div>
             </div>
 
             <!-- 7: VERDICT -->
             <div x-show="slide===7" class="reveal" :class="slide===7&&'run'">
               <div class="flex flex-col items-center text-center gap-6">
-                <p class="pop display" style="font-size:4rem">⚡</p>
-                <div class="card pop p-6 text-2xl font-black italic leading-snug" x-text="'&ldquo;'+data.personality.verdict+'&rdquo;'"></div>
-                <p class="pop mono text-xs uppercase tracking-[3px] font-bold opacity-70">— WalletLens Verdict</p>
+                <div class="badge pop" :style="`background:${themes[slide].ink};color:${themes[slide].bg}`">The Verdict</div>
+                <div class="pop text-2xl font-bold italic leading-snug" x-text="'&ldquo;'+data.personality.verdict+'&rdquo;'"></div>
+                <p class="pop mono text-xs uppercase tracking-[.24em] opacity-60">— WalletLens Verdict</p>
               </div>
             </div>
 
             <!-- 8: SUMMARY -->
             <div x-show="slide===8" class="reveal" :class="slide===8&&'run'">
-              <div class="badge pop text-xs mb-5">In Summary</div>
+              <div class="badge pop mb-5" :style="`background:${themes[slide].ink};color:${themes[slide].bg}`">In Summary</div>
               <p class="display pop mb-2" style="font-size:clamp(1.5rem,6vw,2.2rem)" x-text="data.metrics.sarcasticTitle"></p>
-              <p class="pop mono text-[11px] uppercase tracking-widest font-bold opacity-70 mb-4" x-show="data.metrics.percentile" x-text="'Top ' + (data.metrics.percentile?.topPercent ?? '') + '% of ' + (data.metrics.percentile?.sampleSize ?? '') + ' wrapped wallets'"></p>
+              <p class="pop mono text-[10px] uppercase tracking-[.18em] opacity-60 mb-4" x-show="data.metrics.percentile" x-text="'Top ' + (data.metrics.percentile?.topPercent ?? '') + '% of ' + (data.metrics.percentile?.sampleSize ?? '') + ' wrapped wallets'"></p>
               <div class="grid grid-cols-4 gap-2 mb-4">
                 <template x-for="s in scoreData" :key="s.label">
-                  <div class="card pop p-2 text-center"><p class="mono text-[9px] uppercase font-bold opacity-60" x-text="s.label"></p><p class="display text-xl" :style="`color:${s.hex}`" x-text="s.value"></p></div>
+                  <div class="card pop p-3 text-center" :style="`background:transparent;border:1px solid ${slideBorder}`"><p class="mono text-[9px] uppercase opacity-60" x-text="s.label"></p><p class="display text-xl" x-text="s.value"></p></div>
                 </template>
               </div>
               <div class="pop flex flex-wrap gap-1.5 mb-6">
                 <template x-for="sig in signalChips" :key="sig">
-                  <span class="mono text-[10px] uppercase font-bold border-2 border-[#0a0a0a] bg-white text-[#0a0a0a] px-2 py-1" x-text="sig"></span>
+                  <span class="mono text-[10px] uppercase px-2.5 py-1 rounded-full" :style="`border:1px solid ${slideBorder}`" x-text="sig"></span>
                 </template>
               </div>
-              <button @click="shareX()" class="pop btn w-full py-4 bg-[var(--ink)] text-white text-sm">Share on X</button>
+              <button @click="shareX()" class="pop w-full py-4 rounded-full font-bold text-sm cursor-pointer" :style="`background:${themes[slide].ink};color:${themes[slide].bg};border:none`">Share on X</button>
             </div>
 
           </div>
 
-          <div class="marquee" :style="`background:${themes[slide].ink};color:${themes[slide].bg}`">
-            <span>WALLETLENS · YOUR YEAR ONCHAIN · WALLETLENS · YOUR YEAR ONCHAIN · WALLETLENS · YOUR YEAR ONCHAIN · </span><span>WALLETLENS · YOUR YEAR ONCHAIN · WALLETLENS · YOUR YEAR ONCHAIN · WALLETLENS · YOUR YEAR ONCHAIN · </span>
+          <div class="marquee" :style="`color:${themes[slide].ink};opacity:.5;border-color:${slideBorder}`">
+            <span>WALLETLENS · YOUR YEAR ONCHAIN · WALLETLENS · YOUR YEAR ONCHAIN · WALLETLENS · YOUR YEAR ONCHAIN ·&nbsp;</span><span>WALLETLENS · YOUR YEAR ONCHAIN · WALLETLENS · YOUR YEAR ONCHAIN · WALLETLENS · YOUR YEAR ONCHAIN ·&nbsp;</span>
           </div>
         </div>
 
         <!-- controls -->
         <div class="w-full max-w-[560px] flex justify-between items-center gap-3 flex-wrap">
           <div class="flex items-center gap-3">
-            <button @click="prev()" :disabled="slide===0" class="btn w-12 h-12 bg-white display text-xl flex items-center justify-center">←</button>
-            <span class="display text-lg"><span x-text="slide+1"></span><span class="opacity-40">/</span><span x-text="totalSlides"></span></span>
-            <button @click="next()" :disabled="slide===totalSlides-1" class="btn w-12 h-12 bg-white display text-xl flex items-center justify-center">→</button>
+            <button @click="prev()" :disabled="slide===0" class="btn w-12 h-12 text-xl flex items-center justify-center">←</button>
+            <span class="mono text-sm text-[#929292]"><span x-text="slide+1"></span>/<span x-text="totalSlides"></span></span>
+            <button @click="next()" :disabled="slide===totalSlides-1" class="btn w-12 h-12 text-xl flex items-center justify-center">→</button>
           </div>
           <div class="flex gap-2">
-            <button @click="saveImage()" class="btn px-4 py-3 bg-white text-xs">Save Image</button>
-            <button @click="reset()" class="btn px-4 py-3 bg-white text-xs">New Wrap</button>
+            <button @click="saveImage()" class="btn px-5 py-3 text-xs">Save Image</button>
+            <button @click="reset()" class="btn px-5 py-3 text-xs">New Wrap</button>
           </div>
         </div>
       </div>
@@ -533,17 +535,20 @@
         data: { address:'', metrics: null, personality: null },
         disp: { totalTx: 0, swaps: 0 },
         touchX: 0,
+        accent: '#E85DC8', // OKX-style magenta, used sparingly for emphasis
         themes: [
-          { bg:'#FFD400', ink:'#0a0a0a' }, // cover
-          { bg:'#FF2D8B', ink:'#0a0a0a' }, // archetype
-          { bg:'#2B4BFF', ink:'#ffffff' }, // overview
-          { bg:'#12E4B6', ink:'#0a0a0a' }, // portfolio
-          { bg:'#C6FF00', ink:'#0a0a0a' }, // scores
-          { bg:'#FF5C00', ink:'#0a0a0a' }, // fun facts
-          { bg:'#8B3DFF', ink:'#ffffff' }, // habits
-          { bg:'#F3EDE2', ink:'#0a0a0a' }, // verdict
-          { bg:'#FFD400', ink:'#0a0a0a' }, // summary
+          { bg:'#000000', ink:'#ffffff' }, // cover
+          { bg:'#0d0d0d', ink:'#ffffff' }, // archetype
+          { bg:'#000000', ink:'#ffffff' }, // overview
+          { bg:'#0d0d0d', ink:'#ffffff' }, // portfolio
+          { bg:'#000000', ink:'#ffffff' }, // scores
+          { bg:'#0d0d0d', ink:'#ffffff' }, // fun facts
+          { bg:'#000000', ink:'#ffffff' }, // habits
+          { bg:'#0d0d0d', ink:'#ffffff' }, // verdict
+          { bg:'#000000', ink:'#ffffff' }, // summary
         ],
+
+        get slideBorder() { return '#2a2a2a'; },
 
         // ---- live usage counters ----
         statsReady: false,
@@ -581,27 +586,27 @@
           'nftCollector', 'contractHeavy', 'reciprocalFlow',
         ],
         tools: [
-          { name: 'profile_wallet', title: 'The full picture', hex: '#2B4BFF', tilt: '-rotate-1',
+          { name: 'profile_wallet', title: 'The full picture',
             desc: 'Archetype with confidence, activity breakdown, token portfolio, net worth, scores, signals, top counterparty, evidence.' },
-          { name: 'screen_wallet', title: 'Risk, fast', hex: '#FF2D8B', tilt: 'rotate-1',
+          { name: 'screen_wallet', title: 'Risk, fast',
             desc: 'Coarse risk level plus the flags behind it: bot-like, dust-farming, approval-heavy, dormant, brand new.' },
-          { name: 'compare_wallets', title: 'Rank a shortlist', hex: '#00A676', tilt: 'rotate-1',
+          { name: 'compare_wallets', title: 'Rank a shortlist',
             desc: 'Two to five addresses, side by side. Pick the safest counterparty or spot the farmer in the set.' },
-          { name: 'classify_wallet', title: 'Cheap check', hex: '#C68A00', tilt: '-rotate-1',
+          { name: 'classify_wallet', title: 'Cheap check',
             desc: 'Just the archetype, confidence, rarity tier and active signals. For when you do not need the whole profile.' },
-          { name: 'find_sybils', title: 'Spot the farm', hex: '#8B3DFF', tilt: 'rotate-1',
+          { name: 'find_sybils', title: 'Spot the farm',
             desc: 'Screen 3–20 wallets for coordination: shared counterparties, shared funder, correlated timing. Clusters the sybils before you airdrop.' },
-          { name: 'screen_wallets', title: 'Vet the allowlist', hex: '#FF5C00', tilt: '-rotate-1',
+          { name: 'screen_wallets', title: 'Vet the allowlist',
             desc: 'Up to 20 wallets, one call: risk, verdict, momentum per wallet. Light mode — cheap enough to run on the whole list.' },
-          { name: 'check_approvals', title: 'The drainer check', hex: '#0a0a0a', tilt: '-rotate-1',
+          { name: 'check_approvals', title: 'The drainer check',
             desc: 'Decodes recent approve() calldata: every spender, every allowance. Flags unlimited approvals and blocklisted spenders before they drain.' },
-          { name: 'diff_wallet', title: 'What changed?', hex: '#2B4BFF', tilt: 'rotate-1',
+          { name: 'diff_wallet', title: 'What changed?',
             desc: 'Baseline on first call, delta on every call after: archetype flips, signals gained or lost, new txs, net-worth moves. Monitoring as a tool call.' },
-          { name: 'expand_risk', title: 'Screen the circle', hex: '#FF2D8B', tilt: '-rotate-1',
+          { name: 'expand_risk', title: 'Screen the circle',
             desc: 'The wallet looks clean — but who funds it? Light-screens its top counterparties both directions and verdicts the whole neighborhood.' },
-          { name: 'get_quota', title: 'Budget first — free', hex: '#00A676', tilt: 'rotate-1',
-            desc: 'Remaining free calls today plus live x402 pricing. Never counts against the quota, so agents can meter before they spend.' },
-          { name: 'get_population', title: 'The population — free', hex: '#8B3DFF', tilt: '-rotate-1',
+          { name: 'get_quota', title: 'Budget first — free',
+            desc: 'Live x402 pricing and payment status, free forever — so an agent can meter its spend before it commits to a paid call.' },
+          { name: 'get_population', title: 'The population — free',
             desc: 'Archetype and score distributions across every wallet WalletLens has profiled — the exact population your percentile is measured against.' },
         ],
         steps: [
@@ -648,10 +653,10 @@
           const m = this.data.metrics;
           if (!m) return [];
           return [
-            { label: 'DeFi', value: m.defiScore, hex: '#2B4BFF' },
-            { label: 'Airdrop', value: m.airdropScore, hex: '#8B3DFF' },
-            { label: 'Degen', value: m.degenScore, hex: '#FF2D8B' },
-            { label: 'Whale', value: m.whaleometer, hex: '#C68A00' },
+            { label: 'DeFi', value: m.defiScore },
+            { label: 'Airdrop', value: m.airdropScore },
+            { label: 'Degen', value: m.degenScore },
+            { label: 'Whale', value: m.whaleometer },
           ];
         },
 
@@ -740,6 +745,10 @@
             if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Request failed'); }
             const json = await res.json();
             this.data = json.data;
+            // The API response nests everything under metrics and omits the
+            // top-level address; carry the one we asked for so the cover and
+            // summary slides can show it.
+            if (!this.data.address) this.data.address = addr;
             this.slide = 0;
             this.wrapped = true;
             this.loading = false;
@@ -811,6 +820,7 @@
           try {
             const canvas = await html2canvas(el, {
               scale: 2, useCORS: true, logging: false,
+              backgroundColor: this.themes[this.slide].bg,
               onclone: (doc) => {
                 // html2canvas re-triggers CSS animations in the clone, capturing
                 // reveal elements at their opacity:0 start frame. Freeze them.
@@ -820,11 +830,6 @@
                   n.style.animation = 'none';
                 });
                 doc.querySelectorAll('.marquee > span').forEach(n => { n.style.animation = 'none'; });
-                // -webkit-text-stroke is unsupported by html2canvas; render solid.
-                doc.querySelectorAll('.hollow').forEach(n => {
-                  n.style.color = 'currentColor';
-                  n.style.webkitTextStroke = '0';
-                });
               },
             });
             const link = document.createElement('a');
